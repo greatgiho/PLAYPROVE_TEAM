@@ -1,0 +1,19 @@
+@import "../styles/legacy-css/style.css";
+@import "../styles/legacy-css/style_v2.css";
+@import "../styles/legacy-css/auth.css";
+
+/* Next.js root fills viewport */
+html,
+body {
+  height: 100%;
+}
+
+#__next,
+body > div {
+  min-height: 100%;
+}
+
+/* App Router pages use .page-content inside legacy shell */
+.next-page-root {
+  width: 100%;
+}

@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlayProve — Team ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style_v2.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+
+  <style>
+    /* ── 스크린 전환 기본 ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* login / onboarding은 전체 화면 flex */
+    #screen-login,
+    #screen-onboarding {
+      display: none;
+      min-height: 100vh;
+    }
+    #screen-login.active,
+    #screen-onboarding.active {
+      display: flex;
+    }
+
+    /* app 스크린 — 사이드바+메인 가로 배치 */
+    #screen-app {
+      display: none;
+    }
+    #screen-app.active {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ████████████████████████████████████████
+     SCREEN 1 : LOGIN
+████████████████████████████████████████ -->
+<div id="screen-login" class="login-body">
+
+  <!-- 배경 장식 -->
+  <div class="login-bg">
+    <div class="bg-circle c1"></div>
+    <div class="bg-circle c2"></div>
+    <div class="bg-circle c3"></div>
+  </div>
+
+  <div class="login-wrap">
+    <!-- ── STEP 1: 소셜 로그인 선택 ── -->
+    <div class="login-card" id="stepSocial">
+      <div class="login-logo">
+        <div class="login-logo-icon">P</div>
+        <div>
+          <div class="login-brand">play<span>prove</span></div>
+          <div class="login-sub">Team ERP · Coaching Hub</div>
+        </div>
+      </div>
+
+      <h2 class="login-title">시작하기</h2>
+      <p class="login-desc">팀 운영 플랫폼에 오신 걸 환영합니다.<br>소셜 계정으로 간편하게 로그인하세요.</p>
+
+      <button class="social-btn google" onclick="handleSocialLogin('google')">
+        <svg class="social-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Google 계정으로 계속하기
+      </button>
+
+      <button class="social-btn apple" onclick="handleSocialLogin('apple')">
+        <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+        </svg>
+        Apple 계정으로 계속하기
+      </button>
+
+      <div class="divider"><span>또는</span></div>
+
+      <div class="demo-section">
+        <div class="demo-title">
+          <i class="fas fa-flask"></i> 데모 체험
+          <span class="demo-badge">프로토타입</span>
+        </div>
+        <div class="demo-grid">
+          <button class="demo-btn owner" onclick="handleDemoLogin('google','owner')">
+            <i class="fas fa-shield-alt"></i>
+            <div class="demo-btn-label">매니저</div>
+            <div class="demo-btn-sub">전체 권한</div>
+          </button>
+          <button class="demo-btn coach" onclick="handleDemoLogin('google','coach')">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <div class="demo-btn-label">코치</div>
+            <div class="demo-btn-sub">코칭 권한</div>
+          </button>
+          <button class="demo-btn player" onclick="handleDemoLogin('google','player')">
+            <i class="fas fa-running"></i>
+            <div class="demo-btn-label">선수</div>
+            <div class="demo-btn-sub">개인 뷰</div>
+          </button>
+          <button class="demo-btn new" onclick="handleDemoLogin('google','new')">
+            <i class="fas fa-user-plus"></i>
+            <div class="demo-btn-label">신규 가입</div>
+            <div class="demo-btn-sub">온보딩 체험</div>
+          </button>
+        </div>
+      </div>
+
+      <p class="login-terms">
+        계속 진행하면 <a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+      </p>
+    </div>
+
+    <!-- ── STEP 2: 소셜 로그인 후 역할 선택 ── -->
+    <div class="login-card" id="stepDemoSelect" style="display:none">
+      <button class="back-btn" onclick="loginShowStep('stepSocial')">
+        <i class="fas fa-arrow-left"></i> 뒤로
+      </button>
+      <div class="login-logo" style="margin-bottom:16px">
+        <div class="social-pill" id="providerPill">
+          <i class="fas fa-check-circle" style="color:var(--green)"></i>
+          <span id="providerLabel">Google 로그인 완료</span>
+        </div>
+      </div>
+      <h2 class="login-title" style="margin-bottom:6px">체험할 역할을 선택하세요</h2>
+      <p class="login-desc">실제 서비스에서는 팀 가입 승인 후 자동으로 역할이 부여됩니다.</p>
+      <div class="role-select-grid" id="roleSelectGrid"></div>
+    </div>
+
+    <!-- ── STEP 3: 로딩 ── -->
+    <div class="login-card" id="stepLoading" style="display:none">
+      <div style="text-align:center;padding:40px 0">
+        <div class="login-spinner"></div>
+        <div style="margin-top:20px;font-weight:700;font-size:16px" id="loadingMsg">로그인 중...</div>
+        <div style="margin-top:6px;font-size:13px;color:var(--gray-500)">잠시만 기다려주세요</div>
+      </div>
+    </div>
+  </div><!-- /login-wrap -->
+
+</div><!-- /screen-login -->
+
+
+<!-- ████████████████████████████████████████
+     SCREEN 2 : ONBOARDING
+████████████████████████████████████████ -->
+<div id="screen-onboarding" class="onboard-body">
+
+  <header class="onboard-header">
+    <div class="onboard-logo">
+      <div class="onboard-logo-icon">P</div>
+      <div class="onboard-logo-text">PlayProve</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+      <div id="obHeaderUser" style="font-size:13px;color:rgba(255,255,255,.8);font-weight:600"></div>
+      <button onclick="AUTH.logout()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="onboard-wrap">
+    <div class="onboard-card" id="onboardCard">
+      <!-- JS로 각 단계 주입 -->
+    </div>
+  </div>
+
+</div><!-- /screen-onboarding -->
+
+
+<!-- ████████████████████████████████████████
+     SCREEN 3 : APP (ERP 메인)
+████████████████████████████████████████ -->
+<div id="screen-app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-wrap">
+        <div class="logo-icon">p</div>
+        <div class="logo-text">
+          <span class="logo-brand">play</span><span class="logo-brand2">prove</span>
+          <span class="logo-sub">Coaching Hub v3</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="view-switcher" id="viewSwitcher">
+      <button class="view-btn active" data-view="manager" onclick="switchView('manager')">
+        <i class="fas fa-shield-alt"></i> Manager
+      </button>
+      <button class="view-btn" data-view="coach" onclick="switchView('coach')">
+        <i class="fas fa-chalkboard-teacher"></i> Coach
+      </button>
+      <button class="view-btn" data-view="player" onclick="switchView('player')">
+        <i class="fas fa-running"></i> Player
+      </button>
+    </div>
+
+    <div class="sidebar-team" id="sidebarTeam">
+      <div class="team-badge">🏈</div>
+      <div>
+        <div class="team-name" id="sidebarTeamName">서울 드래곤즈</div>
+        <div class="team-season">2026 시즌</div>
+      </div>
+    </div>
+
+    <div class="sidebar-scroll">
+      <div class="sidebar-section-label view-admin view-coach">MANAGEMENT</div>
+      <nav class="sidebar-nav view-admin view-coach">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="fas fa-th-large"></i><span>팀 대시보드</span>
+        </a>
+        <a href="#" class="nav-item" data-page="roster">
+          <i class="fas fa-users"></i><span>선수단 관리</span>
+        </a>
+        <a href="#" class="nav-item" data-page="attendance">
+          <i class="fas fa-calendar-check"></i><span>출결 관리</span>
+        </a>
+        <a href="#" class="nav-item" data-page="injury">
+          <i class="fas fa-medkit"></i><span>부상·컨디션</span>
+        </a>
+        <a href="#" class="nav-item view-admin" data-page="dues">
+          <i class="fas fa-won-sign"></i><span>회비 관리</span>
+          <span class="nav-tag-admin">MGR</span>
+        </a>
+        <a href="#" class="nav-item" data-page="depthchart">
+          <i class="fas fa-sitemap"></i><span>뎁스 차트</span>
+        </a>
+        <a href="#" class="nav-item" data-page="practice_plan">
+          <i class="fas fa-clipboard-list"></i><span>훈련 계획</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-section-label view-admin view-coach" style="margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px">COACHING</div>
+      <nav class="sidebar-nav view-admin view-coach">
+        <a href="#" class="nav-item" data-page="performance">
+          <i class="fas fa-star"></i><span>역량 평가</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="simulator">
+          <i class="fas fa-dice-d20"></i><span>Roster 시뮬레이터</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="rapidcheck">
+          <i class="fas fa-bolt"></i><span>훈련 즉시평가</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="iip_coach">
+          <i class="fas fa-dumbbell"></i><span>IIP 관리</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="ai_tactical">
+          <i class="fas fa-robot"></i><span>AI 전술 어시스턴트</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="growth">
+          <i class="fas fa-chart-line"></i><span>성장 속도 분석</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="coach_plan">
+          <i class="fas fa-pencil-ruler"></i><span>훈련계획 작성</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-section-label view-admin" id="adminNavSection" style="margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px">MANAGER</div>
+      <nav class="sidebar-nav view-admin" id="adminNavMenu">
+        <a href="#" class="nav-item" data-page="admin">
+          <i class="fas fa-user-check"></i><span>가입 승인 관리</span>
+          <span class="notif-dot-nav" id="pendingRequestsDot" style="display:none"></span>
+        </a>
+      </nav>
+
+      <div class="sidebar-section-label" style="margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px">MY SPACE</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item" data-page="mypage">
+          <i class="fas fa-user-circle"></i><span>내 페이지</span>
+        </a>
+        <a href="#" class="nav-item view-player" data-page="my_iip">
+          <i class="fas fa-tasks"></i><span>나의 훈련 과제</span>
+          <span class="nav-badge-new">v3</span>
+        </a>
+        <a href="#" class="nav-item" data-page="myfeed">
+          <i class="fas fa-rss"></i><span>My Feed</span>
+        </a>
+        <a href="#" class="nav-item" data-page="notices">
+          <i class="fas fa-bullhorn"></i><span>공지사항</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="margin-bottom:10px">
+        <button onclick="AUTH && AUTH.logout()" style="width:100%;padding:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="fas fa-sign-out-alt"></i> 로그아웃
+        </button>
+      </div>
+      <div class="player-switcher">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">현재 접속 (데모)</div>
+        <select id="currentPlayerSelect" onchange="switchCurrentPlayer(this.value)"
+          style="width:100%;padding:7px 10px;border-radius:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;cursor:pointer;outline:none"></select>
+      </div>
+      <div class="user-info" id="sidebarUserInfo" style="margin-top:10px;cursor:pointer" onclick="navigate('mypage');closeSidebar()">
+        <div class="user-avatar" id="sidebarAvatar">?</div>
+        <div style="flex:1;min-width:0">
+          <div class="user-name" id="sidebarName">로딩 중...</div>
+          <div class="user-role" id="sidebarRole"></div>
+        </div>
+        <i class="fas fa-chevron-right" style="color:rgba(255,255,255,.3);font-size:11px;flex-shrink:0"></i>
+      </div>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="main-wrap" id="mainWrap">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+      <div class="topbar-title" id="pageTitle">팀 대시보드</div>
+      <div class="topbar-right">
+        <div class="view-mode-badge" id="viewModeBadge">
+          <i class="fas fa-shield-alt"></i> <span id="viewModeLabel">Manager</span>
+        </div>
+        <span class="date-badge" id="todayDate"></span>
+        <div class="notif-wrap" id="notifWrap">
+          <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" aria-label="알림">
+            <i class="fas fa-bell"></i>
+            <span class="notif-dot" id="notifDot" style="display:none"></span>
+          </button>
+          <div class="notif-panel" id="notifPanel" role="dialog" aria-label="알림 패널">
+            <div class="notif-panel-header">
+              <span style="font-weight:800;font-size:14px">알림</span>
+              <button onclick="markAllRead()" style="background:none;border:none;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer">모두 읽음</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <div style="text-align:center;padding:20px;color:var(--gray-500);font-size:13px">알림 없음</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main class="page-content" id="pageContent" role="main"></main>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-box" id="modalBox">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle"></h3>
+        <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</div><!-- /screen-app -->
+
+
+<!-- ████████████████████████████████████████
+     공용 토스트 (로그인/온보딩용)
+████████████████████████████████████████ -->
+<div class="toast-auth" id="toastAuth"></div>
+
+
+<!-- ████████████████████████████████████████
+     SCRIPTS
+████████████████████████████████████████ -->
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/gamification.js"></script>
+<script src="js/viewcontrol.js"></script>
+<script src="js/coaching.js"></script>
+<script src="js/simulator.js"></script>
+<script src="js/iip.js"></script>
+<script src="js/mypage.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/training_plan.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   SCREEN ROUTER
+   세션 상태에 따라 login / onboarding / app 화면 전환
+════════════════════════════════════════════════════════ */
+
+/* 현재 활성 스크린 */
+let _currentScreen = null;
+
+function showScreen(name) {
+  // name: 'login' | 'onboarding' | 'app'
+  ['login','onboarding','app'].forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('active', s === name);
+  });
+  _currentScreen = name;
+}
+
+/* ── 진입 라우팅 ── */
+function routeBySession() {
+  if (!AUTH.isLoggedIn()) {
+    showScreen('login');
+    return;
+  }
+  const session = AUTH.getSession() || {};
+
+  if (!session.teamId || session.status === 'no_team') {
+    showScreen('onboarding');
+    initOnboarding(session);
+    return;
+  }
+  if (session.status === 'pending') {
+    showScreen('onboarding');
+    initOnboarding(session);
+    return;
+  }
+  // 정상 로그인 → 앱
+  showScreen('app');
+  initApp(session);
+}
+
+/* ── 앱 초기화 (DOMContentLoaded 이후에 호출됨) ── */
+function initApp(session) {
+  // 세션 기반 전역값 설정
+  window.__sessionViewMode = AUTH.getViewMode();
+  window.__sessionRole     = session.role;
+  window.__sessionTeamName = session.teamName || '서울 드래곤즈';
+  window.__sessionUser     = session;
+
+  // app.js의 메인 초기화
+  if (typeof _appInit === 'function') _appInit();
+}
+
+/* ════════════════════════════════════════════════════════
+   LOGIN SCREEN LOGIC
+════════════════════════════════════════════════════════ */
+let _pendingProvider = null;
+
+function handleSocialLogin(provider) {
+  _pendingProvider = provider;
+  buildRoleSelectUI(provider);
+  loginShowStep('stepDemoSelect');
+}
+
+function buildRoleSelectUI(provider) {
+  const pill  = document.getElementById('providerPill');
+  const label = document.getElementById('providerLabel');
+
+  if (provider === 'apple') {
+    pill.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#000" style="flex-shrink:0">
+        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+      </svg>
+      <span>Apple 로그인 완료</span>`;
+  } else {
+    if (label) label.textContent = 'Google 로그인 완료';
+  }
+
+  const roles = [
+    { key: 'owner',  icon: 'fa-shield-alt',         label: '매니저',          sub: '전체 기능 + 가입 승인 권한', color: '#7B1818' },
+    { key: 'coach',  icon: 'fa-chalkboard-teacher', label: '코치 / 매니저',     sub: '코칭·평가·출결 관리',       color: '#1a5ca8' },
+    { key: 'player', icon: 'fa-running',            label: '선수',             sub: '개인 페이지·훈련 과제',     color: '#1a8a4a' },
+    { key: 'new',    icon: 'fa-user-plus',          label: '신규 (팀 없음)',    sub: '팀 생성 또는 가입 신청',    color: '#c07a00' },
+  ];
+
+  document.getElementById('roleSelectGrid').innerHTML = roles.map(r => `
+    <button class="role-select-card" onclick="handleDemoLogin('${provider}','${r.key}')">
+      <div class="role-select-icon" style="background:${r.color}15;color:${r.color}">
+        <i class="fas ${r.icon}"></i>
+      </div>
+      <div class="role-select-label">${r.label}</div>
+      <div class="role-select-sub">${r.sub}</div>
+    </button>
+  `).join('');
+}
+
+async function handleDemoLogin(provider, roleKey) {
+  loginShowStep('stepLoading');
+  document.getElementById('loadingMsg').textContent = '로그인 중...';
+  await sleep(700);
+  const session = await AUTH.demoLogin(provider, roleKey);
+  document.getElementById('loadingMsg').textContent = '팀 정보 확인 중...';
+  await sleep(500);
+  routeBySession();
+}
+
+function loginShowStep(id) {
+  ['stepSocial','stepDemoSelect','stepLoading'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   ONBOARDING SCREEN LOGIC
+════════════════════════════════════════════════════════ */
+const OB = {
+  step: 'choice',
+  mode: null,
+  teamSearchResult: null,
+  draft: {}
+};
+
+function initOnboarding(session) {
+  const headerUser = document.getElementById('obHeaderUser');
+  if (headerUser) {
+    headerUser.textContent = (session.displayName || session.email || '사용자') + ' 님';
+  }
+  OB.step = (session.status === 'pending') ? 'pending' : 'choice';
+  OB.draft = {};
+  OB.teamSearchResult = null;
+  renderOB();
+}
+
+function renderOB() {
+  const card = document.getElementById('onboardCard');
+  if (!card) return;
+  switch (OB.step) {
+    case 'choice':        card.innerHTML = renderOBChoice();        break;
+    case 'createTeam':    card.innerHTML = renderOBCreateTeam();    break;
+    case 'profileCreate': card.innerHTML = renderOBProfileCreate(); break;
+    case 'joinTeam':      card.innerHTML = renderOBJoinTeam();      break;
+    case 'profileJoin':   card.innerHTML = renderOBProfileJoin();   break;
+    case 'pending':       card.innerHTML = renderOBPending();       break;
+    case 'done':          card.innerHTML = renderOBDone();          break;
+  }
+}
+
+function obStepIndicator(steps, current) {
+  const labels = {
+    choice:'시작', createTeam:'팀 정보', profileCreate:'내 정보',
+    joinTeam:'팀 찾기', profileJoin:'내 정보', pending:'대기', done:'완료'
+  };
+  return `
+    <div class="step-indicator" style="margin-bottom:28px">
+      ${steps.map((s, i) => `
+        ${i > 0 ? `<div class="step-line ${steps.indexOf(current) > i ? 'done' : ''}"></div>` : ''}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div class="step-dot ${s === current ? 'active' : steps.indexOf(current) > i ? 'done' : ''}">
+            ${steps.indexOf(current) > i ? '<i class="fas fa-check" style="font-size:10px"></i>' : i + 1}
+          </div>
+          <div class="step-label">${labels[s] || s}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+/* ─── 단계별 렌더 ─── */
+function renderOBChoice() {
+  return `
+    ${obStepIndicator(['choice','createTeam','profileCreate'], 'choice')}
+    <div class="onboard-title">PlayProve에 오신 걸 환영합니다 🏈</div>
+    <div class="onboard-desc">팀을 직접 만들거나, 초대 코드로 기존 팀에 합류하세요.</div>
+    <div class="choice-grid">
+      <div class="choice-card" onclick="obSelect('create')">
+        <div class="choice-icon create"><i class="fas fa-plus-circle"></i></div>
+        <div class="choice-label">새 팀 만들기</div>
+        <div class="choice-sub">팀 매니저가 되어<br>팀을 직접 운영</div>
+      </div>
+      <div class="choice-card" onclick="obSelect('join')">
+        <div class="choice-icon join"><i class="fas fa-sign-in-alt"></i></div>
+        <div class="choice-label">팀에 합류하기</div>
+        <div class="choice-sub">초대 코드로<br>기존 팀에 가입 신청</div>
+      </div>
+    </div>`;
+}
+
+function obSelect(mode) {
+  OB.mode = mode;
+  OB.step = mode === 'create' ? 'createTeam' : 'joinTeam';
+  renderOB();
+}
+
+function renderOBCreateTeam() {
+  return `
+    ${obStepIndicator(['choice','createTeam','profileCreate'], 'createTeam')}
+    <div class="onboard-title">새 팀 만들기 🏟️</div>
+    <div class="onboard-desc">팀 기본 정보를 입력하세요. 나중에 언제든 수정할 수 있습니다.</div>
+    <form id="createTeamForm" onsubmit="obSubmitCreateTeam(event)">
+      <div class="form-group">
+        <label class="form-label">팀 이름 <span class="required">*</span></label>
+        <input class="form-control" name="team_name" required placeholder="예) 서울 드래곤즈" value="${OB.draft.team_name||''}" />
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">스포츠 종목 <span class="required">*</span></label>
+          <select class="form-control" name="sport" required>
+            <option value="">-- 선택 --</option>
+            <option value="american_football" ${OB.draft.sport==='american_football'?'selected':''}>🏈 미식축구</option>
+            <option value="flag_football"     ${OB.draft.sport==='flag_football'?'selected':''}>🚩 플래그풋볼</option>
+            <option value="soccer"            ${OB.draft.sport==='soccer'?'selected':''}>⚽ 축구</option>
+            <option value="baseball"          ${OB.draft.sport==='baseball'?'selected':''}>⚾ 야구</option>
+            <option value="basketball"        ${OB.draft.sport==='basketball'?'selected':''}>🏀 농구</option>
+            <option value="other"             ${OB.draft.sport==='other'?'selected':''}>기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">연고지 <span class="required">*</span></label>
+          <input class="form-control" name="city" required placeholder="예) 서울" value="${OB.draft.city||''}" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">창단 연도</label>
+          <input class="form-control" type="number" name="founded_year" min="1990" max="2030" placeholder="${new Date().getFullYear()}" value="${OB.draft.founded_year||''}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">시즌 연도</label>
+          <input class="form-control" type="number" name="season_year" value="${new Date().getFullYear()}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">팀 소개</label>
+        <textarea class="form-control" name="description" rows="2" placeholder="팀을 한 줄로 소개해주세요...">${OB.draft.description||''}</textarea>
+      </div>
+      <div class="onboard-nav">
+        <button type="button" class="btn btn-secondary" onclick="OB.step='choice';renderOB()">
+          <i class="fas fa-arrow-left"></i> 뒤로
+        </button>
+        <button type="submit" class="btn btn-primary btn-block">
+          다음 <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </form>`;
+}
+
+async function obSubmitCreateTeam(e) {
+  e.preventDefault();
+  OB.draft = { ...OB.draft, ...Object.fromEntries(new FormData(e.target)) };
+  OB.step = 'profileCreate';
+  renderOB();
+}
+
+function renderOBProfileCreate() {
+  const session = AUTH.getSession() || {};
+  return `
+    ${obStepIndicator(['choice','createTeam','profileCreate'], 'profileCreate')}
+    <div class="onboard-title">매니저 프로필 설정 👤</div>
+    <div class="onboard-desc">팀 관리자로 등록될 내 정보를 입력하세요.</div>
+    <form id="profileCreateForm" onsubmit="obSubmitProfileCreate(event)">
+      <div class="form-group">
+        <label class="form-label">이름 <span class="required">*</span></label>
+        <input class="form-control" name="display_name" required placeholder="실명" value="${session.displayName||OB.draft.display_name||''}" />
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">연락처</label>
+          <input class="form-control" type="tel" name="phone" placeholder="010-0000-0000" value="${OB.draft.phone||''}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출생연도</label>
+          <input class="form-control" type="number" name="birth_year" placeholder="1990" min="1960" max="2010" value="${OB.draft.birth_year||''}" />
+        </div>
+      </div>
+      <div class="onboard-nav">
+        <button type="button" class="btn btn-secondary" onclick="OB.step='createTeam';renderOB()">
+          <i class="fas fa-arrow-left"></i> 뒤로
+        </button>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-rocket"></i> 팀 개설하기
+        </button>
+      </div>
+    </form>`;
+}
+
+async function obSubmitProfileCreate(e) {
+  e.preventDefault();
+  OB.draft = { ...OB.draft, ...Object.fromEntries(new FormData(e.target)) };
+  showAuthToast('팀을 생성하는 중...', '');
+  try {
+    const result = await AUTH.createTeam(OB.draft);
+    OB.draft.teamCode = result.teamCode;
+    OB.step = 'done';
+    renderOB();
+  } catch (err) {
+    showAuthToast('팀 생성 실패: ' + err.message, 'error');
+  }
+}
+
+function renderOBJoinTeam() {
+  const found = OB.teamSearchResult;
+  return `
+    ${obStepIndicator(['choice','joinTeam','profileJoin','pending'], 'joinTeam')}
+    <div class="onboard-title">팀 찾기 🔍</div>
+    <div class="onboard-desc">팀 관리자에게 받은 6자리 초대 코드를 입력하세요.</div>
+    <div class="form-group">
+      <label class="form-label">팀 초대 코드 <span class="required">*</span></label>
+      <div class="team-code-input">
+        <input class="form-control" id="teamCodeInput" maxlength="6" placeholder="DRG26A"
+          value="${OB.draft.teamCode||''}"
+          oninput="this.value=this.value.toUpperCase()" />
+        <button type="button" class="code-search-btn" onclick="obSearchTeam()">
+          <i class="fas fa-search"></i> 검색
+        </button>
+      </div>
+    </div>
+    <div id="teamSearchResult">
+      ${found ? obTeamResultCard(found) : ''}
+    </div>
+    <div class="onboard-nav" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="OB.step='choice';renderOB()">
+        <i class="fas fa-arrow-left"></i> 뒤로
+      </button>
+      ${found ? `<button class="btn btn-primary btn-block" onclick="OB.step='profileJoin';renderOB()">
+        이 팀에 가입 신청 <i class="fas fa-arrow-right"></i>
+      </button>` : ''}
+    </div>`;
+}
+
+function obTeamResultCard(team) {
+  return `
+    <div class="team-result-card">
+      <div class="team-result-icon">🏈</div>
+      <div>
+        <div class="team-result-name">${team.team_name}</div>
+        <div class="team-result-meta">${team.city||''} · ${team.sport||''} · ${team.season_year||''}시즌</div>
+        ${team.description ? `<div style="font-size:12px;color:var(--gray-600);margin-top:4px">${team.description}</div>` : ''}
+      </div>
+      <i class="fas fa-check-circle" style="color:var(--green);font-size:20px;margin-left:auto;flex-shrink:0"></i>
+    </div>`;
+}
+
+async function obSearchTeam() {
+  const code = (document.getElementById('teamCodeInput')?.value || '').trim().toUpperCase();
+  if (code.length < 4) { showAuthToast('코드를 입력하세요', 'error'); return; }
+  OB.draft.teamCode = code;
+
+  if (code === 'DRG26A') {
+    OB.teamSearchResult = { id:'team-001', team_name:'서울 드래곤즈', city:'서울', sport:'미식축구', season_year:2026, description:'서울 대표 아마추어 미식축구단' };
+  } else {
+    try {
+      const res  = await fetch(`tables/teams?search=${code}&limit=5`);
+      const json = await res.json();
+      OB.teamSearchResult = (json.data||[]).find(t => t.team_code === code) || null;
+    } catch { OB.teamSearchResult = null; }
+  }
+
+  const resultEl = document.getElementById('teamSearchResult');
+  if (resultEl) {
+    resultEl.innerHTML = OB.teamSearchResult
+      ? obTeamResultCard(OB.teamSearchResult)
+      : `<div style="padding:14px;text-align:center;color:var(--red);font-size:13px;font-weight:700"><i class="fas fa-times-circle"></i> 코드에 해당하는 팀을 찾을 수 없습니다.</div>`;
+  }
+  renderOB();
+}
+
+function renderOBProfileJoin() {
+  const session = AUTH.getSession() || {};
+  const team    = OB.teamSearchResult;
+  return `
+    ${obStepIndicator(['choice','joinTeam','profileJoin','pending'], 'profileJoin')}
+    <div class="onboard-title">가입 신청서 작성 📋</div>
+    <div class="onboard-desc">
+      <strong style="color:var(--primary)">${team?.team_name}</strong>에 가입 신청합니다.<br>
+      매니저 승인 후 최종 가입됩니다.
+    </div>
+    <form id="profileJoinForm" onsubmit="obSubmitProfileJoin(event)">
+      <div class="form-group">
+        <label class="form-label">이름 <span class="required">*</span></label>
+        <input class="form-control" name="display_name" required value="${session.displayName||OB.draft.display_name||''}" />
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">연락처</label>
+          <input class="form-control" type="tel" name="phone" placeholder="010-0000-0000" value="${OB.draft.phone||''}" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출생연도</label>
+          <input class="form-control" type="number" name="birth_year" placeholder="1998" min="1960" max="2010" value="${OB.draft.birth_year||''}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">신청 역할 <span class="required">*</span></label>
+        <div class="role-chip-wrap" id="roleChips">
+          ${['player','coach','manager','staff'].map(r => {
+            const meta = { player:'선수 🏈', coach:'코치 📋', manager:'매니저 📊', staff:'스태프 🔧' };
+            return `<button type="button" class="role-chip ${OB.draft.role===r?'selected':''}" onclick="obSelectRole('${r}')">${meta[r]}</button>`;
+          }).join('')}
+        </div>
+        <input type="hidden" id="roleHidden" name="role" value="${OB.draft.role||''}" />
+      </div>
+      <div id="playerFields" style="${OB.draft.role==='player'||!OB.draft.role?'':'display:none'}">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">포지션</label>
+            <select class="form-control" name="position">
+              <option value="">-- 선택 --</option>
+              <optgroup label="Offense">
+                ${['QB','RB','FB','WR','TE','C','G','T'].map(p=>`<option value="${p}" ${OB.draft.position===p?'selected':''}>${p}</option>`).join('')}
+              </optgroup>
+              <optgroup label="Defense">
+                ${['DE','DT','NT','OLB','ILB','MLB','CB','NB','FS','SS'].map(p=>`<option value="${p}" ${OB.draft.position===p?'selected':''}>${p}</option>`).join('')}
+              </optgroup>
+              <optgroup label="Special">
+                ${['K','P','LS','KR','PR'].map(p=>`<option value="${p}" ${OB.draft.position===p?'selected':''}>${p}</option>`).join('')}
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">유닛</label>
+            <select class="form-control" name="unit">
+              <option value="">-- 선택 --</option>
+              <option value="offense" ${OB.draft.unit==='offense'?'selected':''}>Offense</option>
+              <option value="defense" ${OB.draft.unit==='defense'?'selected':''}>Defense</option>
+              <option value="special" ${OB.draft.unit==='special'?'selected':''}>Special</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">희망 등번호</label>
+            <input class="form-control" type="number" name="jersey_number" min="1" max="99" value="${OB.draft.jersey_number||''}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">신장 (cm)</label>
+            <input class="form-control" type="number" name="height_cm" placeholder="175" value="${OB.draft.height_cm||''}" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">체중 (kg)</label>
+          <input class="form-control" type="number" name="weight_kg" placeholder="75" style="max-width:120px" value="${OB.draft.weight_kg||''}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">가입 인사 / 지원 동기</label>
+        <textarea class="form-control" name="message" rows="3" placeholder="자신을 소개하고 팀에 지원하는 이유를 적어주세요.">${OB.draft.message||''}</textarea>
+      </div>
+      <div class="onboard-nav">
+        <button type="button" class="btn btn-secondary" onclick="OB.step='joinTeam';renderOB()">
+          <i class="fas fa-arrow-left"></i> 뒤로
+        </button>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fas fa-paper-plane"></i> 가입 신청하기
+        </button>
+      </div>
+    </form>`;
+}
+
+function obSelectRole(role) {
+  OB.draft.role = role;
+  document.querySelectorAll('#roleChips .role-chip').forEach(b => {
+    b.classList.toggle('selected', b.getAttribute('onclick').includes("'"+role+"'"));
+  });
+  const rh = document.getElementById('roleHidden');
+  if (rh) rh.value = role;
+  const pf = document.getElementById('playerFields');
+  if (pf) pf.style.display = role === 'player' ? '' : 'none';
+}
+
+async function obSubmitProfileJoin(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  if (!data.role) { showAuthToast('역할을 선택하세요', 'error'); return; }
+  OB.draft = { ...OB.draft, ...data };
+
+  showAuthToast('가입 신청 중...', '');
+  try {
+    await AUTH.submitJoinRequest(OB.teamSearchResult.id, OB.draft);
+    const session = AUTH.getSession() || {};
+    AUTH.setSession({ ...session, status:'pending', teamId:OB.teamSearchResult.id, teamName:OB.teamSearchResult.team_name });
+    OB.step = 'pending';
+    renderOB();
+  } catch (err) {
+    showAuthToast('신청 실패: ' + err.message, 'error');
+  }
+}
+
+function renderOBPending() {
+  const session  = AUTH.getSession() || {};
+  const teamName = OB.teamSearchResult?.team_name || session.teamName || '팀';
+  return `
+    <div class="pending-state">
+      <div class="pending-icon">⏳</div>
+      <div class="pending-title">가입 신청 완료!</div>
+      <div class="pending-desc">팀 관리자의 승인을 기다리고 있습니다.<br>승인이 완료되면 앱에 접속할 수 있습니다.</div>
+      <div class="pending-team-badge">🏈 ${teamName}</div>
+      <div class="pending-steps">
+        <div class="pending-step"><i class="fas fa-check-circle" style="color:var(--green)"></i> 가입 신청서 제출 완료</div>
+        <div class="pending-step"><i class="fas fa-clock" style="color:var(--yellow)"></i> 팀 매니저 검토 대기 중</div>
+        <div class="pending-step"><i class="fas fa-circle" style="color:var(--gray-300)"></i> 승인 후 앱 접속 가능</div>
+      </div>
+      <button class="btn btn-secondary btn-block" onclick="AUTH.logout()">
+        <i class="fas fa-sign-out-alt"></i> 로그아웃 (나중에 다시 확인)
+      </button>
+    </div>`;
+}
+
+function renderOBDone() {
+  const session = AUTH.getSession() || {};
+  const code    = OB.draft.teamCode || session.teamCode || '------';
+  return `
+    <div class="pending-state">
+      <div class="pending-icon">🎉</div>
+      <div class="pending-title">팀이 개설되었습니다!</div>
+      <div class="pending-desc">팀 초대 코드를 선수들에게 공유하면<br>가입 신청을 받아 승인할 수 있습니다.</div>
+      <div class="team-code-display" style="margin:0 auto 24px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;margin-bottom:4px">팀 초대 코드</div>
+          <div class="team-code-val" id="teamCodeVal">${code}</div>
+        </div>
+        <button class="copy-btn" onclick="obCopyCode()"><i class="fas fa-copy"></i> 복사</button>
+      </div>
+      <div class="pending-steps">
+        <div class="pending-step"><i class="fas fa-check-circle" style="color:var(--green)"></i> 팀 개설 완료</div>
+        <div class="pending-step"><i class="fas fa-check-circle" style="color:var(--green)"></i> 매니저 계정 생성</div>
+        <div class="pending-step"><i class="fas fa-arrow-right" style="color:var(--primary)"></i> ERP 대시보드로 이동 가능</div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="routeBySession()">
+        <i class="fas fa-rocket"></i> ERP 시작하기
+      </button>
+    </div>`;
+}
+
+function obCopyCode() {
+  const code = document.getElementById('teamCodeVal')?.textContent || '';
+  navigator.clipboard.writeText(code)
+    .then(() => showAuthToast('초대 코드 복사됨! ' + code, 'success'));
+}
+
+/* ── 공용 토스트 ── */
+function showAuthToast(msg, type) {
+  const t = document.getElementById('toastAuth');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast-auth ' + (type || '');
+  t.classList.add('show');
+  if (type !== '') setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── 유틸 ── */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ════════════════════════════════════════════════════════
+   AUTH.logout() 재정의 — 화면 전환으로 처리
+════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  // auth.js의 logout 재정의: location.href 대신 showScreen
+  if (typeof AUTH !== 'undefined') {
+    AUTH.logout = function() {
+      this.clearSession();
+      OB.step = 'choice';
+      OB.draft = {};
+      OB.teamSearchResult = null;
+      showScreen('login');
+      loginShowStep('stepSocial');
+    };
+  }
+
+  // 진입 라우팅
+  routeBySession();
+});
+</script>
+
+</body>
+</html>
