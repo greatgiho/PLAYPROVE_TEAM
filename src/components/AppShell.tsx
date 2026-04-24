@@ -80,7 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navLinkClass = (href: string) => {
     const active = pathname.startsWith(href);
     return [
-      "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors",
+      "flex w-full min-w-0 items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors",
       active
         ? "bg-white font-bold text-[#5a1010] shadow-sm"
         : "text-white/65 hover:bg-white/10 hover:text-white",
@@ -108,13 +108,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex items-center justify-between border-b border-white/10 px-5 pb-4 pt-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white font-['Bebas_Neue',sans-serif] text-[22px] font-black leading-none text-[#5a1010]">
+            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white text-[22px] font-black leading-none text-[#5a1010]">
               p
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-[17px] font-extrabold tracking-tight text-white">play</span>
-              <span className="-mt-0.5 text-[17px] font-extrabold tracking-tight text-[#e8a0a0]">prove</span>
-              <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-white/55">Next.js App Router</span>
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="block text-[17px] font-extrabold leading-none tracking-tight text-white">play</span>
+              <span className="block text-[17px] font-extrabold leading-none tracking-tight text-[#e8a0a0]">prove</span>
+              <span className="mt-0.5 block text-[10px] font-medium uppercase leading-tight tracking-wide text-white/55">
+                Next.js App Router
+              </span>
             </div>
           </div>
           <button
@@ -127,13 +129,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <div className="mx-3.5 mt-2.5 mb-1 flex flex-row gap-0.5 rounded-lg bg-black/25 p-1">
+        <div className="mx-3.5 mt-2.5 mb-1 flex gap-0.5 rounded-lg bg-black/25 p-1">
           {modes.map((m) => (
             <button
               key={m}
               type="button"
               className={[
-                "flex flex-1 flex-row items-center justify-center gap-1 rounded-md border-0 px-1 py-1.5 text-[11px] font-bold transition-colors",
+                "flex flex-1 items-center justify-center gap-1 rounded-md border-0 px-1 py-2 text-[11px] font-bold leading-tight transition-colors",
                 viewMode === m ? "bg-white text-[#5a1010] shadow-sm" : "bg-transparent text-white/50 hover:text-white/80",
               ].join(" ")}
               onClick={() => {
@@ -161,14 +163,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="px-3 pb-2 pt-1 text-[10px] font-extrabold uppercase tracking-wide text-white/45">역할</div>
           <div className="px-3.5 pb-2.5 text-xs font-extrabold text-white/75">{teamRoleLabel(teamRole)}</div>
 
-          <div className="px-3 pb-2 pt-2 text-[10px] font-extrabold uppercase tracking-wide text-white/45">MANAGEMENT</div>
-          <nav className="flex flex-col gap-0.5 px-3 py-1">
+          <div className="px-3 pb-1.5 pt-2 text-[10px] font-extrabold uppercase tracking-wide text-white/45">MANAGEMENT</div>
+          <nav className="flex flex-col gap-1 px-3 py-1">
             {management.map((it) => (
               <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
-                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
-                <span>{it.label}</span>
+                <i className={`fas ${it.icon} w-[18px] shrink-0 text-center text-[15px]`} />
+                <span className="min-w-0 flex-1 truncate text-left">{it.label}</span>
                 {it.tag ? (
-                  <span className={it.tag === "MGR" ? "nav-tag-admin" : "nav-badge-new"}>{it.tag}</span>
+                  <span className={`ml-auto shrink-0 ${it.tag === "MGR" ? "nav-tag-admin" : "nav-badge-new"}`}>{it.tag}</span>
                 ) : null}
               </Link>
             ))}
@@ -177,12 +179,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
             COACHING
           </div>
-          <nav className="flex flex-col gap-0.5 px-3 py-1">
+          <nav className="flex flex-col gap-1 px-3 py-1">
             {coaching.map((it) => (
               <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
-                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
-                <span>{it.label}</span>
-                {it.tag ? <span className="nav-badge-new">{it.tag}</span> : null}
+                <i className={`fas ${it.icon} w-[18px] shrink-0 text-center text-[15px]`} />
+                <span className="min-w-0 flex-1 truncate text-left">{it.label}</span>
+                {it.tag ? <span className="nav-badge-new ml-auto shrink-0">{it.tag}</span> : null}
               </Link>
             ))}
           </nav>
@@ -192,11 +194,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
                 MANAGER
               </div>
-              <nav className="flex flex-col gap-0.5 px-3 py-1">
+              <nav className="flex flex-col gap-1 px-3 py-1">
                 {managerOnly.map((it) => (
                   <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
-                    <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
-                    <span>{it.label}</span>
+                    <i className={`fas ${it.icon} w-[18px] shrink-0 text-center text-[15px]`} />
+                    <span className="min-w-0 flex-1 truncate text-left">{it.label}</span>
                   </Link>
                 ))}
               </nav>
@@ -206,12 +208,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
             MY SPACE
           </div>
-          <nav className="flex flex-col gap-0.5 px-3 py-1">
+          <nav className="flex flex-col gap-1 px-3 py-1">
             {myspace.map((it) => (
               <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
-                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
-                <span>{it.label}</span>
-                {it.tag ? <span className="nav-badge-new">{it.tag}</span> : null}
+                <i className={`fas ${it.icon} w-[18px] shrink-0 text-center text-[15px]`} />
+                <span className="min-w-0 flex-1 truncate text-left">{it.label}</span>
+                {it.tag ? <span className="nav-badge-new ml-auto shrink-0">{it.tag}</span> : null}
               </Link>
             ))}
           </nav>
