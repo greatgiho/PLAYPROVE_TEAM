@@ -7,16 +7,10 @@ import {
   type PlayerGrade,
   type PlayerGradeResult,
 } from "@/lib/mypage/calcPlayerGrade";
+import { RosterFace } from "@/components/roster/RosterFace";
 import type { AttendanceRecord, InjuryReport, MonthlyDue, Player, TeamEvent } from "@/lib/types/entities";
 import Link from "next/link";
 import { Fragment, useMemo } from "react";
-
-function initials(fullName: string): string {
-  const s = fullName.replace(/\s+/g, "").trim();
-  if (!s) return "?";
-  if (s.length <= 2) return s;
-  return s.slice(-2);
-}
 
 function formatDate(iso: string): string {
   try {
@@ -52,9 +46,21 @@ type Props = {
   attendance: AttendanceRecord[];
   dues: MonthlyDue[];
   injuries: InjuryReport[];
+  /** DB 프로필 — 팀/선수 대표 */
+  rosterAvatarUrl?: string | null;
+  /** DB 프로필 — 개인용 */
+  personalAvatarUrl?: string | null;
 };
 
-export function MypagePlayerDashboard({ player, events, attendance, dues, injuries }: Props) {
+export function MypagePlayerDashboard({
+  player,
+  events,
+  attendance,
+  dues,
+  injuries,
+  rosterAvatarUrl = null,
+  personalAvatarUrl = null,
+}: Props) {
   const gradeData: PlayerGradeResult = useMemo(
     () => calcPlayerGrade(player.id, { attendance, events, dues, injuries, conditionLogs: [] }),
     [player.id, attendance, events, dues, injuries],
@@ -100,11 +106,40 @@ export function MypagePlayerDashboard({ player, events, attendance, dues, injuri
   const condDisplay = "-";
   const condColor = "var(--gray-500)";
 
+  const mainHeroPhoto =
+    rosterAvatarUrl ?? personalAvatarUrl ?? player.roster_avatar_url ?? player.personal_avatar_url ?? null;
+  const showPersonalBadge =
+    Boolean(rosterAvatarUrl ?? player.roster_avatar_url) &&
+    Boolean(personalAvatarUrl ?? player.personal_avatar_url);
+
   return (
     <>
       <div className="mypage-hero">
         <div className="mypage-hero-content">
-          <div className="mypage-avatar">{initials(player.full_name)}</div>
+          <div className="mypage-avatar" style={{ padding: 0, overflow: "visible", background: "transparent" }}>
+            <div style={{ position: "relative", width: 88, height: 88 }}>
+              <RosterFace name={player.full_name} photoUrl={mainHeroPhoto} size={88} />
+              {showPersonalBadge ? (
+                <img
+                  src={personalAvatarUrl ?? player.personal_avatar_url ?? ""}
+                  alt=""
+                  width={40}
+                  height={40}
+                  style={{
+                    position: "absolute",
+                    right: -4,
+                    bottom: -4,
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "3px solid rgba(255,255,255,0.95)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  }}
+                />
+              ) : null}
+            </div>
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <div className="mypage-name">{player.full_name}</div>

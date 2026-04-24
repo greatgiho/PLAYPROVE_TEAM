@@ -18,7 +18,7 @@ const MANAGEMENT: NavItem[] = [
   { id: "injury", href: "/app/injury", label: "부상·컨디션", icon: "fa-medkit" },
   { id: "dues", href: "/app/dues", label: "회비 관리", icon: "fa-won-sign", tag: "MGR" },
   { id: "depthchart", href: "/app/depthchart", label: "뎁스 차트", icon: "fa-sitemap" },
-  { id: "practice_plan", href: "/app/practice_plan", label: "훈련 계획", icon: "fa-clipboard-list", tag: "v3" },
+  { id: "practice_plan", href: "/app/practice_plan", label: "훈련 계획표", icon: "fa-clipboard-list", tag: "v3" },
 ];
 
 const COACHING: NavItem[] = [

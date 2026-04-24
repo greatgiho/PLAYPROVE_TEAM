@@ -38,6 +38,7 @@ model Team {
   monthlyDues                      MonthlyDue[]
   attendances                      Attendance[]
   events                           Event[]
+  eventCoachPlans                  EventCoachPlan[]
   practiceCheckins                 PracticeCheckin[]
   trainingSchedules                TrainingSchedule[]
 
@@ -56,7 +57,18 @@ model Profile {
   displayName                      String?   @map("display_name")
   phone                            String?   @map("phone")
   birthYear                        Int?      @map("birth_year")
+  /// 팀/선수 대표 사진 — 로스터·공식 노출
   avatarUrl                        String?   @map("avatar_url")
+  /// 개인 프로필용 사진
+  personalAvatarUrl                String?   @map("personal_avatar_url")
+  /// 스태프: 전공·자격 요약 (매니저 등)
+  academicMajor                    String?   @map("academic_major")
+  /// 스태프: 담당 업무·유지 기록 (줄바꿈으로 항목 구분)
+  staffResponsibilities            String?   @map("staff_responsibilities") @db.Text
+  /// 코치: 경력·이력 (줄바꿈으로 항목 구분)
+  coachingCareerNotes              String?   @map("coaching_career_notes") @db.Text
+  /// 코치: 담당 유닛/파트 (예: offense, defense, special)
+  coachingUnit                     String?   @map("coaching_unit")
   users_profiles_created_byTousers users?    @relation("profiles_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
   users_profiles_idTousers         users     @relation("profiles_idTousers", fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users_profiles_updated_byTousers users?    @relation("profiles_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
@@ -207,8 +219,32 @@ model Event {
   team                           Team               @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users_events_updated_byTousers users?             @relation("events_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
   practiceCheckins               PracticeCheckin[]
+  eventCoachPlans                EventCoachPlan[]
 
   @@map("events")
+  @@schema("training")
+}
+
+/// 일정(Event)에 코치가 작성하는 세부 훈련/세미나 계획 — 훈련계획표에서 취합 표시
+model EventCoachPlan {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  teamId      String    @map("team_id") @db.Uuid
+  eventId     String    @map("event_id") @db.Uuid
+  coachUserId String    @map("coach_user_id") @db.Uuid
+  title       String    @map("title")
+  content     String?   @map("content") @db.Text
+  sortOrder   Int       @default(0) @map("sort_order")
+  metadata    Json      @default("{}") @map("metadata")
+  event       Event     @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team        Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  coach       users     @relation("event_coach_plans_coach_user_idTousers", fields: [coachUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([eventId])
+  @@index([coachUserId])
+  @@map("event_coach_plans")
   @@schema("training")
 }
 
@@ -976,6 +1012,7 @@ model users {
   attendance_attendance_updated_byTousers                      Attendance[]           @relation("attendance_updated_byTousers")
   events_events_created_byTousers                              Event[]                @relation("events_created_byTousers")
   events_events_updated_byTousers                              Event[]                @relation("events_updated_byTousers")
+  event_coach_plans_event_coach_plans_coach_user_idTousers     EventCoachPlan[]       @relation("event_coach_plans_coach_user_idTousers")
   practice_checkins_practice_checkins_coach_user_idTousers     PracticeCheckin[]      @relation("practice_checkins_coach_user_idTousers")
   practice_checkins_practice_checkins_created_byTousers        PracticeCheckin[]      @relation("practice_checkins_created_byTousers")
   practice_checkins_practice_checkins_updated_byTousers        PracticeCheckin[]      @relation("practice_checkins_updated_byTousers")

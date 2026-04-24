@@ -22,4 +22,5 @@ export interface AuthSession {
   savedAt: number;
 }
 
+/** 데모 로그인에 쓰는 페르소나 (허용 계정만) */
 export type DemoPersona = "manager" | "head_coach" | "part_coach" | "player";

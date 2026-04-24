@@ -11,5 +11,6 @@ export function playerEntityToRosterRow(p: Player): RosterTableRow {
     unit: p.unit,
     primary_position: p.primary_position,
     player_status: p.player_status,
+    roster_photo_url: p.roster_avatar_url ?? null,
   };
 }

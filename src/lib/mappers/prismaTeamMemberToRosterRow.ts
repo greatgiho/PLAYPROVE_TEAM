@@ -34,6 +34,11 @@ function defaultTitle(role: team_member_role): string {
   }
 }
 
+/** 로스터·훈련계획 등에서 쓰는 공식 직함 (metadata.seed_title → 없으면 역할 기본 라벨) */
+export function resolveTeamMemberStaffTitle(metadata: unknown, role: team_member_role): string {
+  return readSeedTitle(metadata) || defaultTitle(role);
+}
+
 function statusLabel(s: team_member_status): string {
   switch (s) {
     case "active":
@@ -52,7 +57,7 @@ function statusLabel(s: team_member_status): string {
 export function prismaTeamMemberToRosterRow(tm: TeamMemberWithUser): RosterTableRow {
   const profile = tm.users_team_members_user_idTousers.profiles_profiles_idTousers;
   const displayName = profile?.displayName?.trim() || tm.users_team_members_user_idTousers.email || "(이름 없음)";
-  const title = readSeedTitle(tm.metadata) || defaultTitle(tm.role);
+  const title = resolveTeamMemberStaffTitle(tm.metadata, tm.role);
 
   return {
     id: tm.id,
@@ -63,6 +68,7 @@ export function prismaTeamMemberToRosterRow(tm: TeamMemberWithUser): RosterTable
     unit: roleUnitLabel(tm.role),
     primary_position: title,
     player_status: statusLabel(tm.status),
+    roster_photo_url: profile?.avatarUrl ?? null,
   };
 }
 

@@ -12,4 +12,6 @@ export interface RosterTableRow {
   unit: string;
   primary_position: string;
   player_status: string;
+  /** 팀/선수 대표 이미지 URL (로스터 이름 옆). 없으면 UI에서 이니셜 */
+  roster_photo_url: string | null;
 }

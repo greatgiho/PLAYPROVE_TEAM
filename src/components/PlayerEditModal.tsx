@@ -1,5 +1,6 @@
 "use client";
 
+import { apiErrorUserHint, type ApiErrorBody } from "@/lib/client/apiErrorHint";
 import { getTeamDataServices } from "@/lib/services/getTeamDataServices";
 import type { Player, PlayerStatus, UnitKind } from "@/lib/types/entities";
 import { useCallback, useEffect, useState } from "react";
@@ -51,13 +52,13 @@ export function PlayerEditModal({ isOpen, playerId, onClose, onSaved, teamCode, 
       if (useDb && teamCode) {
         const res = await fetch(
           `/api/roster/players/${encodeURIComponent(playerId)}?teamCode=${encodeURIComponent(teamCode)}`,
-          { cache: "no-store" },
+          { cache: "no-store", credentials: "include" },
         );
+        const json = (await res.json().catch(() => null)) as (ApiErrorBody & { player?: Player }) | null;
         if (!res.ok) {
-          const j = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(j?.error ?? `load_failed_${res.status}`);
+          throw new Error(apiErrorUserHint(res.status, json));
         }
-        const data = (await res.json()) as { player: Player };
+        const data = json as { player: Player };
         const p = data.player;
         setForm({
           full_name: p.full_name,
@@ -129,6 +130,7 @@ export function PlayerEditModal({ isOpen, playerId, onClose, onSaved, teamCode, 
           `/api/roster/players/${encodeURIComponent(playerId)}?teamCode=${encodeURIComponent(teamCode)}`,
           {
             method: "PATCH",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               full_name: form.full_name.trim(),
@@ -145,9 +147,9 @@ export function PlayerEditModal({ isOpen, playerId, onClose, onSaved, teamCode, 
             }),
           },
         );
+        const saveJson = (await res.json().catch(() => null)) as ApiErrorBody | null;
         if (!res.ok) {
-          const j = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(j?.error ?? `save_failed_${res.status}`);
+          throw new Error(apiErrorUserHint(res.status, saveJson));
         }
       } else if (teamId) {
         const svc = getTeamDataServices();

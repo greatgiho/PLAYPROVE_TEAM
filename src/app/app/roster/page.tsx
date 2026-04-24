@@ -3,11 +3,13 @@
 import { AccessGuard } from "@/components/AccessGuard";
 import { PlayerEditModal } from "@/components/PlayerEditModal";
 import { RosterDetailModal } from "@/components/RosterDetailModal";
+import { RosterFace } from "@/components/roster/RosterFace";
 import { useSession } from "@/lib/context/SessionContext";
 import { playerEntityToRosterRow } from "@/lib/mappers/playerEntityToRosterRow";
 import { getTeamDataServices } from "@/lib/services/getTeamDataServices";
 import type { Player } from "@/lib/types/entities";
 import type { RosterTableRow } from "@/lib/types/rosterTable";
+import { apiErrorUserHint, type ApiErrorBody } from "@/lib/client/apiErrorHint";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** 설정 시 Prisma(DB) 로스터 사용, 비우면 기존 LocalStorage 데모 */
@@ -37,6 +39,7 @@ function RosterTable({
       <table className="erp-table">
         <thead>
           <tr>
+            <th style={{ width: 52 }} aria-label="사진" />
             <th>선수</th>
             <th>번호</th>
             <th>유닛</th>
@@ -52,6 +55,9 @@ function RosterTable({
               style={onRowClick ? { cursor: "pointer" } : undefined}
               onClick={() => onRowClick?.(p)}
             >
+              <td>
+                <RosterFace name={p.full_name} photoUrl={p.roster_photo_url} size={36} />
+              </td>
               <td>
                 <div style={{ fontWeight: 800 }}>{p.full_name}</div>
                 <div style={{ fontSize: 12, color: "var(--gray-500)" }}>{p.phone ?? ""}</div>
@@ -98,15 +104,20 @@ function RosterInner() {
     if (!session) return;
     setLoadError(null);
     if (DB_TEAM_CODE) {
-      const res = await fetch(`/api/roster?teamCode=${encodeURIComponent(DB_TEAM_CODE)}`, { cache: "no-store" });
+      const res = await fetch(`/api/roster?teamCode=${encodeURIComponent(DB_TEAM_CODE)}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const json = (await res.json().catch(() => null)) as
+        | (ApiErrorBody & { players?: RosterTableRow[]; staff?: RosterTableRow[] })
+        | null;
       if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-        setLoadError(body?.message ?? `로스터 API 오류 (${res.status})`);
+        setLoadError(apiErrorUserHint(res.status, json));
         setPlayerRows([]);
         setStaffRows([]);
         return;
       }
-      const data = (await res.json()) as { players: RosterTableRow[]; staff: RosterTableRow[] };
+      const data = json as { players: RosterTableRow[]; staff: RosterTableRow[] };
       setPlayerRows(data.players ?? []);
       setStaffRows(data.staff ?? []);
       return;
@@ -148,8 +159,17 @@ function RosterInner() {
         </div>
       ) : null}
       {loadError ? (
-        <div className="card" style={{ marginBottom: 12, padding: "10px 14px", color: "var(--danger, #b42318)" }}>
-          {loadError}
+        <div
+          className="card"
+          style={{
+            marginBottom: 12,
+            padding: "12px 16px",
+            color: "var(--danger, #b42318)",
+            lineHeight: 1.6,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          <strong>로스터 API</strong> — {loadError}
         </div>
       ) : null}
 

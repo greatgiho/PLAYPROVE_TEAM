@@ -28,6 +28,8 @@ type PlayerWithLink = DbPlayer & {
 export function prismaPlayerToEntity(row: PlayerWithLink): Player {
   const profile = row.users_players_linked_user_idTousers?.profiles_profiles_idTousers ?? null;
   const phone = profile?.phone ?? null;
+  const roster_avatar_url = profile?.avatarUrl ?? null;
+  const personal_avatar_url = profile?.personalAvatarUrl ?? null;
 
   return {
     id: row.id,
@@ -49,5 +51,7 @@ export function prismaPlayerToEntity(row: PlayerWithLink): Player {
     player_status: mapRosterStatus(row.rosterStatus),
     notes: row.notes ?? null,
     linked_user_id: row.linkedUserId,
+    roster_avatar_url,
+    personal_avatar_url,
   };
 }

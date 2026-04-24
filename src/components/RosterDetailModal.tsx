@@ -1,8 +1,10 @@
 "use client";
 
+import { RosterFace } from "@/components/roster/RosterFace";
 import { getLocalPlayerForDetailModal } from "@/lib/roster/computeLocalPlayerMetrics";
 import type { Player } from "@/lib/types/entities";
 import type { RosterTableRow } from "@/lib/types/rosterTable";
+import { apiErrorUserHint, type ApiErrorBody } from "@/lib/client/apiErrorHint";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 type Props = {
@@ -14,13 +16,6 @@ type Props = {
   onEditPlayer?: (playerId: string) => void;
   canEditPlayers?: boolean;
 };
-
-function avatarInitials(fullName: string): string {
-  const s = fullName.replace(/\s+/g, "").trim();
-  if (!s) return "?";
-  if (s.length <= 2) return s;
-  return s.slice(-2);
-}
 
 function playerStatusKo(code: string): string {
   switch (code) {
@@ -166,14 +161,14 @@ export function RosterDetailModal({ isOpen, row, onClose, teamCode, teamId, onEd
           try {
             const res = await fetch(
               `/api/roster/players/${encodeURIComponent(r.id)}/summary?teamCode=${encodeURIComponent(teamCode)}`,
-              { cache: "no-store" },
+              { cache: "no-store", credentials: "include" },
             );
+            const json = (await res.json().catch(() => null)) as PlayerSummaryPayload | ApiErrorBody | null;
             if (!res.ok) {
-              const j = (await res.json().catch(() => null)) as { error?: string } | null;
-              throw new Error(j?.error ?? `summary_${res.status}`);
+              if (!cancelled) setErr(apiErrorUserHint(res.status, json as ApiErrorBody));
+            } else if (!cancelled) {
+              setPlayerPayload(json as PlayerSummaryPayload);
             }
-            const data = (await res.json()) as PlayerSummaryPayload;
-            if (!cancelled) setPlayerPayload(data);
           } catch (e) {
             if (!cancelled) setErr(e instanceof Error ? e.message : "load_failed");
           } finally {
@@ -196,14 +191,14 @@ export function RosterDetailModal({ isOpen, row, onClose, teamCode, teamId, onEd
           try {
             const res = await fetch(
               `/api/roster/staff/${encodeURIComponent(r.id)}/summary?teamCode=${encodeURIComponent(teamCode)}`,
-              { cache: "no-store" },
+              { cache: "no-store", credentials: "include" },
             );
+            const json = (await res.json().catch(() => null)) as StaffSummaryPayload | ApiErrorBody | null;
             if (!res.ok) {
-              const j = (await res.json().catch(() => null)) as { error?: string } | null;
-              throw new Error(j?.error ?? `summary_${res.status}`);
+              if (!cancelled) setErr(apiErrorUserHint(res.status, json as ApiErrorBody));
+            } else if (!cancelled) {
+              setStaffPayload(json as StaffSummaryPayload);
             }
-            const data = (await res.json()) as StaffSummaryPayload;
-            if (!cancelled) setStaffPayload(data);
           } catch (e) {
             if (!cancelled) setErr(e instanceof Error ? e.message : "load_failed");
           } finally {
@@ -348,23 +343,8 @@ export function RosterDetailModal({ isOpen, row, onClose, teamCode, teamId, onEd
         <div className="modal-body" style={{ paddingTop: 8 }}>
           {/* 헤더: 아바타 + 이름 + 뱃지 + 한 줄 요약 */}
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "var(--primary)",
-                color: "var(--white)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-              aria-hidden
-            >
-              {avatarInitials(row.full_name)}
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <RosterFace name={row.full_name} photoUrl={row.roster_photo_url} size={64} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>

@@ -121,6 +121,66 @@ async function upsertProfile(id: string, displayName: string, metadata: Prisma.I
   });
 }
 
+/** 데모 매니저·코치 — `core.profiles` 스태프 확장 컬럼 (마이그레이션 적용 후 동작) */
+async function applyDemoStaffProfileColumns(
+  managerUsers: { id: string }[],
+  coachUsers: { id: string; title: string }[],
+) {
+  const mgr0 = managerUsers[0]?.id;
+  const headId = coachUsers[0]?.id;
+  const partId = coachUsers[1]?.id;
+  if (!mgr0 || !headId || !partId) return;
+
+  const rows: { id: string; data: Prisma.ProfileUpdateInput }[] = [
+    {
+      id: mgr0,
+      data: {
+        academicMajor: "스포츠 매니지먼트 (석사 과정)",
+        staffResponsibilities: [
+          "K리그·아마추어 리그 회비 정산 및 영수증 보관",
+          "신규 선수 가입 서류·보험 가입 확인",
+          "홈경기 스태프 배정·봉사 시간 기록",
+        ].join("\n"),
+        coachingCareerNotes: null,
+        coachingUnit: null,
+      },
+    },
+    {
+      id: headId,
+      data: {
+        academicMajor: "운동생리학",
+        staffResponsibilities: ["헤드 코치 주간 보고서 작성", "전술 패키지 버전 관리"].join("\n"),
+        coachingCareerNotes: ["2018–2022: 대학팀 오펜스 코디네이터", "2023–현재: 서울 드래곤즈 헤드코치"].join("\n"),
+        coachingUnit: "team",
+      },
+    },
+    {
+      id: partId,
+      data: {
+        academicMajor: null,
+        staffResponsibilities: ["오펜스 포지션 미팅 주 2회", "패스 프로텍션 드릴 설계"].join("\n"),
+        coachingCareerNotes: ["2019–2021: D2 WR 코치", "2022–현재: 오펜스 코디네이터"].join("\n"),
+        coachingUnit: "offense",
+      },
+    },
+  ];
+
+  for (const { id, data } of rows) {
+    try {
+      await prisma.profile.update({ where: { id }, data });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("Unknown arg") || msg.includes("does not exist")) {
+        console.warn(
+          "[seed] profiles 스태프 컬럼이 없습니다. `npx prisma migrate deploy` 또는 `db push` 후 시드를 다시 실행하세요.",
+        );
+        return;
+      }
+      throw e;
+    }
+  }
+}
+
 async function upsertTeamMember(
   teamId: string,
   userId: string,
@@ -284,6 +344,8 @@ async function main() {
   const jerseyPick = jerseys.slice(0, 44);
 
   const playerRows: { id: string; userId: string }[] = [];
+  /** Next.js 데모 세션 `SessionContext` 의 선수 playerId 와 동일해야 로스터/마이페이지가 맞습니다. */
+  const DEMO_FIXED_PLAYER_ROW_ID = "00000000-0000-4000-8000-000000000007";
 
   for (let i = 0; i < playerUsers.length; i++) {
     const pu = playerUsers[i]!;
@@ -293,16 +355,15 @@ async function main() {
 
     await upsertProfile(pu.id, pu.name, metaBase("PLAYER", { primary_position: pos }));
 
-    const existing = await prisma.player.findFirst({
-      where: { teamId: team.id, linkedUserId: pu.id, deletedAt: null },
-      select: { id: true },
-    });
-
     let playerId: string;
-    if (existing) {
-      const p = await prisma.player.update({
-        where: { id: existing.id },
-        data: {
+
+    if (i === 0) {
+      const p = await prisma.player.upsert({
+        where: { id: DEMO_FIXED_PLAYER_ROW_ID },
+        create: {
+          id: DEMO_FIXED_PLAYER_ROW_ID,
+          teamId: team.id,
+          linkedUserId: pu.id,
           fullName: pu.name,
           primaryPosition: pos,
           secondaryPosition: null,
@@ -312,29 +373,67 @@ async function main() {
           weightKg,
           joinYear: seasonYear,
           rosterStatus: player_roster_status.active,
-          linkedUserId: pu.id,
-          deletedAt: null,
-          metadata: { seed: "bulk_v1", idx: i } as Prisma.InputJsonValue,
+          metadata: { seed: "bulk_v1", idx: i, demo_fixed: true } as Prisma.InputJsonValue,
         },
-      });
-      playerId = p.id;
-    } else {
-      const p = await prisma.player.create({
-        data: {
-          teamId: team.id,
+        update: {
           linkedUserId: pu.id,
           fullName: pu.name,
           primaryPosition: pos,
+          secondaryPosition: null,
           unit: unitForPosition(pos),
           jerseyNumber: jerseyPick[i]!,
           heightCm,
           weightKg,
           joinYear: seasonYear,
           rosterStatus: player_roster_status.active,
-          metadata: { seed: "bulk_v1", idx: i } as Prisma.InputJsonValue,
+          deletedAt: null,
+          metadata: { seed: "bulk_v1", idx: i, demo_fixed: true } as Prisma.InputJsonValue,
         },
       });
       playerId = p.id;
+    } else {
+      const existing = await prisma.player.findFirst({
+        where: { teamId: team.id, linkedUserId: pu.id, deletedAt: null },
+        select: { id: true },
+      });
+
+      if (existing) {
+        const p = await prisma.player.update({
+          where: { id: existing.id },
+          data: {
+            fullName: pu.name,
+            primaryPosition: pos,
+            secondaryPosition: null,
+            unit: unitForPosition(pos),
+            jerseyNumber: jerseyPick[i]!,
+            heightCm,
+            weightKg,
+            joinYear: seasonYear,
+            rosterStatus: player_roster_status.active,
+            linkedUserId: pu.id,
+            deletedAt: null,
+            metadata: { seed: "bulk_v1", idx: i } as Prisma.InputJsonValue,
+          },
+        });
+        playerId = p.id;
+      } else {
+        const p = await prisma.player.create({
+          data: {
+            teamId: team.id,
+            linkedUserId: pu.id,
+            fullName: pu.name,
+            primaryPosition: pos,
+            unit: unitForPosition(pos),
+            jerseyNumber: jerseyPick[i]!,
+            heightCm,
+            weightKg,
+            joinYear: seasonYear,
+            rosterStatus: player_roster_status.active,
+            metadata: { seed: "bulk_v1", idx: i } as Prisma.InputJsonValue,
+          },
+        });
+        playerId = p.id;
+      }
     }
 
     playerRows.push({ id: playerId, userId: pu.id });
@@ -365,6 +464,8 @@ async function main() {
       },
     });
   }
+
+  await applyDemoStaffProfileColumns(managerUsers, coachUsers);
 
   console.log("Seed 완료:", {
     team: team.name,

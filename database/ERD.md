@@ -1,6 +1,7 @@
 # PlayProve 데이터 ERD
 
-`database/playprove_supabase_schema.sql` · `prisma/schema.prisma` 와 동일한 관계입니다.  
+**기준 소스:** `prisma/schema.prisma` + `prisma/migrations/*.sql` (실제 Postgres/Supabase DDL).  
+삭제된 일괄 덤프 대신, 필요한 DDL 은 마이그레이션 폴더와 `database/training_event_coach_plans.sql` 등에 둡니다.  
 `auth.users` 는 Supabase 인증(외부 스키마)입니다.
 
 ## 전체 관계 (Mermaid `erDiagram`)
@@ -50,6 +51,15 @@ erDiagram
     uuid id PK
     uuid team_id FK
     timestamptz starts_at
+  }
+
+  event_coach_plans {
+    uuid id PK
+    uuid team_id FK
+    uuid event_id FK
+    uuid coach_user_id FK
+    text title
+    text content
   }
 
   attendance {
@@ -141,11 +151,13 @@ erDiagram
   AUTH_USERS ||--o{ performance_scores : "coach_user_id"
   AUTH_USERS ||--o{ iip_assignments : "coach_user_id"
   AUTH_USERS ||--o{ practice_checkins : "coach_user_id"
+  AUTH_USERS ||--o{ event_coach_plans : "coach_user_id"
 
   teams ||--o{ players : "team_id"
   teams ||--o{ team_members : "team_id"
   teams ||--o{ join_requests : "team_id"
   teams ||--o{ events : "team_id"
+  teams ||--o{ event_coach_plans : "team_id"
   teams ||--o{ attendance : "team_id"
   teams ||--o{ monthly_dues : "team_id"
   teams ||--o{ injury_reports : "team_id"
@@ -166,6 +178,7 @@ erDiagram
   players ||--o{ practice_checkins : "player_id"
 
   events ||--o{ attendance : "event_id"
+  events ||--o{ event_coach_plans : "event_id"
   events ||--o{ performance_scores : "source_event_id"
   events ||--o{ practice_checkins : "event_id"
 
@@ -206,10 +219,13 @@ flowchart TB
 
   subgraph OPS["운영 M-02·M-03·M-04"]
     EV[events]
+    ECP[event_coach_plans]
     AT[attendance]
     MD[monthly_dues]
     INJ[injury_reports]
     T --> EV
+    T --> ECP
+    EV --> ECP
     T --> AT
     T --> MD
     T --> INJ
@@ -254,7 +270,7 @@ flowchart TB
 |------|--------|
 | 테넌트·계정 | `teams`, `profiles` + `auth.users` |
 | 멤버십·가입 | `join_requests`, `team_members`, `players` |
-| 운영 | `events`, `attendance`, `monthly_dues`, `injury_reports` |
+| 운영 | `events`, `event_coach_plans`, `attendance`, `monthly_dues`, `injury_reports` |
 | 훈련 | `training_schedules`, `training_blocks` |
 | 코칭·자동화 | `drill_library`, `performance_scores`, `iip_assignments` |
 | 즉시평가 | `practice_checkins` |

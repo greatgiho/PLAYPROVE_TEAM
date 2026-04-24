@@ -1,6 +1,6 @@
 {
   "name": "playprove-team",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:pull": "prisma db pull",
     "db:seed": "prisma db seed",
+    "db:seed:coach-demo": "tsx scripts/seed-coach-plan-demo.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

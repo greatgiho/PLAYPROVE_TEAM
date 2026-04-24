@@ -36,6 +36,10 @@ export interface Player extends EntityBase {
   notes: string | null;
   /** 로그인 사용자와 로스터를 연결할 때 사용 (옵션) */
   linked_user_id: string | null;
+  /** 연결된 프로필 — 팀/선수 대표 사진 (로스터) */
+  roster_avatar_url?: string | null;
+  /** 연결된 프로필 — 개인용 사진 */
+  personal_avatar_url?: string | null;
 }
 
 export type EventType = "practice" | "game" | "meeting" | "rehab";

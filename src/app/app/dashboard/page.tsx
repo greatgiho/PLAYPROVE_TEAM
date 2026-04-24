@@ -1,6 +1,7 @@
 "use client";
 
 import { AccessGuard } from "@/components/AccessGuard";
+import { DemoScenarioChecklist } from "@/components/demo/DemoScenarioChecklist";
 import { useSession } from "@/lib/context/SessionContext";
 import { getTeamDataServices } from "@/lib/services/getTeamDataServices";
 import type { Player, TeamEvent } from "@/lib/types/entities";
@@ -83,6 +84,8 @@ function DashboardInner() {
 
   return (
     <div>
+      <DemoScenarioChecklist />
+
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-icon">

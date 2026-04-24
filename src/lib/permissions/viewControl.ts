@@ -49,7 +49,8 @@ const PAGE_ACCESS_BY_VIEW: Record<AppPageId, ViewMode[]> = {
 };
 
 /** 파트 코치는 코칭 중 일부 고위험/기획 화면을 제한합니다. */
-const PART_COACH_BLOCKED: AppPageId[] = ["coach_plan", "simulator"];
+/** 레거시 COACHING·훈련계획 작성은 파트 코치도 사용 (포지션 코치). */
+const PART_COACH_BLOCKED: AppPageId[] = ["simulator"];
 
 export function allowableViewModes(teamRole: TeamRole): ViewMode[] {
   switch (teamRole) {
