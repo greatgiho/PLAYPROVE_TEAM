@@ -56,10 +56,10 @@ export default function LoginPage() {
       <div className="login-wrap">
         <div className="login-card">
           <div className="login-logo">
-            <div className="login-logo-icon">P</div>
+            <div className="login-logo-icon">p</div>
             <div>
               <div className="login-brand">
-                play<span>prove</span>
+                playprove
               </div>
               <div className="login-sub">Team ERP · Next.js</div>
             </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
             레거시 HTML 버전은 저장소의 <code>index.html</code> 을 참고하세요.
           </p>
           <div style={{ textAlign: "center", marginTop: 10 }}>
-            <Link href="/" style={{ fontSize: 12, color: "var(--gray-500)" }}>
+            <Link href="/" className="login-footer-link">
               홈
             </Link>
           </div>

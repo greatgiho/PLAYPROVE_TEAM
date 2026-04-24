@@ -1,7 +1,3 @@
-// PlayProve — PostgreSQL 다중 스키마 (core / training / development / management)
-// Prisma 5.22+ : previewFeatures = ["multiSchema"] + datasource.schemas + model/enum @@schema
-// 검증: DATABASE_URL=postgresql://... npx prisma validate
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
@@ -10,14 +6,1103 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["core", "training", "development", "management"]
+  schemas  = ["auth", "core", "development", "management", "training"]
 }
 
-// ---------------------------------------------------------------------------
-// core enums
-// ---------------------------------------------------------------------------
+model Team {
+  id                               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                        DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                        DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  createdBy                        String?            @map("created_by") @db.Uuid
+  updatedBy                        String?            @map("updated_by") @db.Uuid
+  metadata                         Json               @default("{}") @map("metadata")
+  name                             String             @map("name")
+  teamCode                         String             @unique @map("team_code")
+  sport                            String             @default("american_football") @map("sport")
+  city                             String?            @map("city")
+  seasonYear                       Int                @map("season_year")
+  description                      String?            @map("description")
+  ownerUserId                      String?            @map("owner_user_id") @db.Uuid
+  joinRequests                     JoinRequest[]
+  players                          Player[]
+  teamMembers                      TeamMember[]
+  users_teams_created_byTousers    users?             @relation("teams_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_teams_owner_user_idTousers users?             @relation("teams_owner_user_idTousers", fields: [ownerUserId], references: [id], onUpdate: NoAction)
+  users_teams_updated_byTousers    users?             @relation("teams_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  drillLibraries                   DrillLibrary[]
+  iipAssignments                   IipAssignment[]
+  performanceScores                PerformanceScore[]
+  conditionLogs                    ConditionLog[]
+  injuryReports                    InjuryReport[]
+  monthlyDues                      MonthlyDue[]
+  attendances                      Attendance[]
+  events                           Event[]
+  practiceCheckins                 PracticeCheckin[]
+  trainingSchedules                TrainingSchedule[]
 
-enum JoinRequestStatus {
+  @@map("teams")
+  @@schema("core")
+}
+
+model Profile {
+  id                               String    @id @db.Uuid
+  createdAt                        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy                        String?   @map("created_by") @db.Uuid
+  updatedBy                        String?   @map("updated_by") @db.Uuid
+  metadata                         Json      @default("{}") @map("metadata")
+  displayName                      String?   @map("display_name")
+  phone                            String?   @map("phone")
+  birthYear                        Int?      @map("birth_year")
+  avatarUrl                        String?   @map("avatar_url")
+  users_profiles_created_byTousers users?    @relation("profiles_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_profiles_idTousers         users     @relation("profiles_idTousers", fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_profiles_updated_byTousers users?    @relation("profiles_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  ownedMedia                       Media[]   @relation("ProfileOwnedMedia")
+
+  @@map("profiles")
+  @@schema("core")
+}
+
+/// Supabase 스토리지 경로 기준 미디어. 버킷 객체 삭제는 앱/워크플로에서 처리하고, DB는 FK·제약으로 안전하게 관리합니다.
+model Media {
+  id          String       @id @default(uuid()) @db.Uuid
+  type        MediaType    @map("type")
+  storagePath String       @map("storage_path")
+  ownerId     String       @map("owner_id") @db.Uuid
+  contextType MediaContext @map("context_type")
+  title       String?      @map("title")
+  caption     String?      @map("caption")
+  metadata    Json?        @map("metadata")
+  tags        String[]     @default([]) @map("tags")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  owner Profile @relation("ProfileOwnedMedia", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([ownerId])
+  @@index([contextType])
+  @@map("media")
+  @@schema("core")
+}
+
+model Player {
+  id                                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                           DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                           DateTime?            @map("deleted_at") @db.Timestamptz(6)
+  createdBy                           String?              @map("created_by") @db.Uuid
+  updatedBy                           String?              @map("updated_by") @db.Uuid
+  metadata                            Json                 @default("{}") @map("metadata")
+  teamId                              String               @map("team_id") @db.Uuid
+  linkedUserId                        String?              @map("linked_user_id") @db.Uuid
+  fullName                            String               @map("full_name")
+  jerseyNumber                        Int?                 @map("jersey_number")
+  primaryPosition                     String?              @map("primary_position")
+  secondaryPosition                   String?              @map("secondary_position")
+  unit                                String?              @map("unit")
+  heightCm                            Decimal?             @map("height_cm") @db.Decimal(5, 1)
+  weightKg                            Decimal?             @map("weight_kg") @db.Decimal(5, 1)
+  joinYear                            Int?                 @map("join_year")
+  rosterStatus                        player_roster_status @default(active) @map("roster_status")
+  notes                               String?              @map("notes")
+  users_players_created_byTousers     users?               @relation("players_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_players_linked_user_idTousers users?               @relation("players_linked_user_idTousers", fields: [linkedUserId], references: [id], onUpdate: NoAction)
+  team                                Team                 @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_players_updated_byTousers     users?               @relation("players_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  teamMembers                         TeamMember[]
+  iipAssignments                      IipAssignment[]
+  performanceScores                   PerformanceScore[]
+  conditionLogs                       ConditionLog[]
+  injuryReports                       InjuryReport[]
+  monthlyDues                         MonthlyDue[]
+  attendances                         Attendance[]
+  practiceCheckins                    PracticeCheckin[]
+
+  @@map("players")
+  @@schema("core")
+}
+
+model TeamMember {
+  id                                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                            DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                            DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  createdBy                            String?            @map("created_by") @db.Uuid
+  updatedBy                            String?            @map("updated_by") @db.Uuid
+  metadata                             Json               @default("{}") @map("metadata")
+  teamId                               String             @map("team_id") @db.Uuid
+  userId                               String             @map("user_id") @db.Uuid
+  role                                 team_member_role
+  status                               team_member_status @default(pending)
+  playerId                             String?            @map("player_id") @db.Uuid
+  joinedAt                             DateTime?          @map("joined_at") @db.Timestamptz(6)
+  invitedBy                            String?            @map("invited_by") @db.Uuid
+  users_team_members_created_byTousers users?             @relation("team_members_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_team_members_invited_byTousers users?             @relation("team_members_invited_byTousers", fields: [invitedBy], references: [id], onUpdate: NoAction)
+  player                               Player?            @relation(fields: [playerId], references: [id], onUpdate: NoAction)
+  team                                 Team               @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_team_members_updated_byTousers users?             @relation("team_members_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  users_team_members_user_idTousers    users              @relation("team_members_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([teamId, userId], map: "team_members_team_user_unique")
+  @@map("team_members")
+  @@schema("core")
+}
+
+model JoinRequest {
+  id                                     String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                              DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                              DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                              DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  createdBy                              String?             @map("created_by") @db.Uuid
+  updatedBy                              String?             @map("updated_by") @db.Uuid
+  metadata                               Json                @default("{}") @map("metadata")
+  teamId                                 String              @map("team_id") @db.Uuid
+  userId                                 String              @map("user_id") @db.Uuid
+  requestedRole                          team_member_role    @map("requested_role")
+  requestedPosition                      String?             @map("requested_position")
+  requestedUnit                          String?             @map("requested_unit")
+  jerseyNumber                           Int?                @map("jersey_number")
+  heightCm                               Decimal?            @map("height_cm") @db.Decimal(5, 1)
+  weightKg                               Decimal?            @map("weight_kg") @db.Decimal(5, 1)
+  message                                String?             @map("message")
+  status                                 join_request_status @default(pending)
+  reviewedBy                             String?             @map("reviewed_by") @db.Uuid
+  reviewedAt                             DateTime?           @map("reviewed_at") @db.Timestamptz(6)
+  rejectReason                           String?             @map("reject_reason")
+  users_join_requests_created_byTousers  users?              @relation("join_requests_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_join_requests_reviewed_byTousers users?              @relation("join_requests_reviewed_byTousers", fields: [reviewedBy], references: [id], onUpdate: NoAction)
+  team                                   Team                @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_join_requests_updated_byTousers  users?              @relation("join_requests_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  users_join_requests_user_idTousers     users               @relation("join_requests_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("join_requests")
+  @@schema("core")
+}
+
+model Event {
+  id                             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                      DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                      DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  createdBy                      String?            @map("created_by") @db.Uuid
+  updatedBy                      String?            @map("updated_by") @db.Uuid
+  metadata                       Json               @default("{}") @map("metadata")
+  teamId                         String             @map("team_id") @db.Uuid
+  title                          String             @map("title")
+  eventType                      event_type         @default(practice) @map("event_type")
+  startsAt                       DateTime           @map("starts_at") @db.Timestamptz(6)
+  endsAt                         DateTime?          @map("ends_at") @db.Timestamptz(6)
+  location                       String?            @map("location")
+  opponent                       String?            @map("opponent")
+  isMandatory                    Boolean            @default(false) @map("is_mandatory")
+  notes                          String?            @map("notes")
+  status                         event_status       @default(scheduled)
+  performanceScores              PerformanceScore[]
+  attendances                    Attendance[]
+  users_events_created_byTousers users?             @relation("events_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  team                           Team               @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_events_updated_byTousers users?             @relation("events_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  practiceCheckins               PracticeCheckin[]
+
+  @@map("events")
+  @@schema("training")
+}
+
+model Attendance {
+  id                                              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                       DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                       String?           @map("created_by") @db.Uuid
+  updatedBy                                       String?           @map("updated_by") @db.Uuid
+  metadata                                        Json              @default("{}") @map("metadata")
+  teamId                                          String            @map("team_id") @db.Uuid
+  eventId                                         String            @map("event_id") @db.Uuid
+  playerId                                        String            @map("player_id") @db.Uuid
+  status                                          attendance_status @default(undecided)
+  absenceReason                                   String?           @map("absence_reason")
+  lastChangedByUserId                             String?           @map("last_changed_by_user_id") @db.Uuid
+  users_attendance_created_byTousers              users?            @relation("attendance_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  event                                           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_attendance_last_changed_by_user_idTousers users?            @relation("attendance_last_changed_by_user_idTousers", fields: [lastChangedByUserId], references: [id], onUpdate: NoAction)
+  player                                          Player            @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team                                            Team              @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_attendance_updated_byTousers              users?            @relation("attendance_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("attendance")
+  @@schema("training")
+}
+
+model TrainingSchedule {
+  id                                              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                       DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                       DateTime?                @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                       String?                  @map("created_by") @db.Uuid
+  updatedBy                                       String?                  @map("updated_by") @db.Uuid
+  metadata                                        Json                     @default("{}") @map("metadata")
+  teamId                                          String                   @map("team_id") @db.Uuid
+  title                                           String                   @map("title")
+  scheduleDate                                    DateTime                 @map("schedule_date") @db.Date
+  timezone                                        String                   @default("Asia/Seoul") @map("timezone")
+  location                                        String?                  @map("location")
+  status                                          training_schedule_status @default(draft)
+  coachAuthorId                                   String?                  @map("coach_author_id") @db.Uuid
+  submittedAt                                     DateTime?                @map("submitted_at") @db.Timestamptz(6)
+  approvedBy                                      String?                  @map("approved_by") @db.Uuid
+  approvedAt                                      DateTime?                @map("approved_at") @db.Timestamptz(6)
+  rejectedBy                                      String?                  @map("rejected_by") @db.Uuid
+  rejectedAt                                      DateTime?                @map("rejected_at") @db.Timestamptz(6)
+  rejectReason                                    String?                  @map("reject_reason")
+  publishedAt                                     DateTime?                @map("published_at") @db.Timestamptz(6)
+  blocks                                          TrainingBlock[]
+  users_training_schedules_approved_byTousers     users?                   @relation("training_schedules_approved_byTousers", fields: [approvedBy], references: [id], onUpdate: NoAction)
+  users_training_schedules_coach_author_idTousers users?                   @relation("training_schedules_coach_author_idTousers", fields: [coachAuthorId], references: [id], onUpdate: NoAction)
+  users_training_schedules_created_byTousers      users?                   @relation("training_schedules_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  users_training_schedules_rejected_byTousers     users?                   @relation("training_schedules_rejected_byTousers", fields: [rejectedBy], references: [id], onUpdate: NoAction)
+  team                                            Team                     @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_training_schedules_updated_byTousers      users?                   @relation("training_schedules_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("training_schedules")
+  @@schema("training")
+}
+
+model TrainingBlock {
+  id                                         String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                  DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                  DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                  DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                  String?                   @map("created_by") @db.Uuid
+  updatedBy                                  String?                   @map("updated_by") @db.Uuid
+  metadata                                   Json                      @default("{}") @map("metadata")
+  trainingScheduleId                         String                    @map("training_schedule_id") @db.Uuid
+  coachUserId                                String                    @map("coach_user_id") @db.Uuid
+  blockType                                  training_block_type       @default(drill) @map("block_type")
+  columnUnit                                 training_column_unit      @map("column_unit")
+  title                                      String                    @map("title")
+  startsAt                                   DateTime                  @map("starts_at") @db.Timestamptz(6)
+  endsAt                                     DateTime                  @map("ends_at") @db.Timestamptz(6)
+  intensity                                  training_block_intensity? @map("intensity")
+  positionFocus                              String?                   @map("position_focus")
+  sortOrder                                  Int                       @default(0) @map("sort_order")
+  parentBlockId                              String?                   @map("parent_block_id") @db.Uuid
+  users_training_blocks_coach_user_idTousers users                     @relation("training_blocks_coach_user_idTousers", fields: [coachUserId], references: [id], onUpdate: NoAction)
+  users_training_blocks_created_byTousers    users?                    @relation("training_blocks_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  parentBlock                                TrainingBlock?            @relation("BlockHierarchy", fields: [parentBlockId], references: [id], onUpdate: NoAction)
+  childBlocks                                TrainingBlock[]           @relation("BlockHierarchy")
+  schedule                                   TrainingSchedule          @relation(fields: [trainingScheduleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_training_blocks_updated_byTousers    users?                    @relation("training_blocks_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("training_blocks")
+  @@schema("training")
+}
+
+model PracticeCheckin {
+  id                                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                    DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                    DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                    DateTime?               @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                    String?                 @map("created_by") @db.Uuid
+  updatedBy                                    String?                 @map("updated_by") @db.Uuid
+  metadata                                     Json                    @default("{}") @map("metadata")
+  teamId                                       String                  @map("team_id") @db.Uuid
+  playerId                                     String                  @map("player_id") @db.Uuid
+  coachUserId                                  String?                 @map("coach_user_id") @db.Uuid
+  eventId                                      String?                 @map("event_id") @db.Uuid
+  practiceDate                                 DateTime                @map("practice_date") @db.Date
+  status                                       practice_checkin_status @default(draft)
+  starRating                                   Int?                    @map("star_rating")
+  effortTag                                    String?                 @map("effort_tag")
+  coachCommentOneLiner                         String?                 @map("coach_comment_one_liner")
+  users_practice_checkins_coach_user_idTousers users?                  @relation("practice_checkins_coach_user_idTousers", fields: [coachUserId], references: [id], onUpdate: NoAction)
+  users_practice_checkins_created_byTousers    users?                  @relation("practice_checkins_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  event                                        Event?                  @relation(fields: [eventId], references: [id], onUpdate: NoAction)
+  player                                       Player                  @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team                                         Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_practice_checkins_updated_byTousers    users?                  @relation("practice_checkins_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("practice_checkins")
+  @@schema("training")
+}
+
+model DrillLibrary {
+  id                                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                             DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                             DateTime?       @map("deleted_at") @db.Timestamptz(6)
+  createdBy                             String?         @map("created_by") @db.Uuid
+  updatedBy                             String?         @map("updated_by") @db.Uuid
+  metadata                              Json            @default("{}") @map("metadata")
+  teamId                                String?         @map("team_id") @db.Uuid
+  name                                  String          @map("name")
+  description                           String?         @map("description")
+  defaultXp                             Int             @default(0) @map("default_xp")
+  suggestedUnit                         String?         @map("suggested_unit")
+  suggestedPositions                    String[]        @map("suggested_positions")
+  users_drill_library_created_byTousers users?          @relation("drill_library_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  team                                  Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_drill_library_updated_byTousers users?          @relation("drill_library_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+  iipAssignments                        IipAssignment[]
+
+  @@map("drill_library")
+  @@schema("development")
+}
+
+model PerformanceScore {
+  id                                            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                     DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                     DateTime?       @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                     String?         @map("created_by") @db.Uuid
+  updatedBy                                     String?         @map("updated_by") @db.Uuid
+  metadata                                      Json            @default("{}") @map("metadata")
+  teamId                                        String          @map("team_id") @db.Uuid
+  playerId                                      String          @map("player_id") @db.Uuid
+  coachUserId                                   String          @map("coach_user_id") @db.Uuid
+  sourceEventId                                 String?         @map("source_event_id") @db.Uuid
+  evaluatedOn                                   DateTime        @default(dbgenerated("CURRENT_DATE")) @map("evaluated_on") @db.Date
+  physical                                      Decimal         @map("physical") @db.Decimal(4, 1)
+  skill                                         Decimal         @map("skill") @db.Decimal(4, 1)
+  tactical                                      Decimal         @map("tactical") @db.Decimal(4, 1)
+  attendanceMetric                              Decimal         @map("attendance_metric") @db.Decimal(4, 1)
+  mental                                        Decimal         @map("mental") @db.Decimal(4, 1)
+  coachComment                                  String?         @map("coach_comment")
+  keywordTags                                   String[]        @default([]) @map("keyword_tags")
+  isVisibleToPlayer                             Boolean         @default(true) @map("is_visible_to_player")
+  iipFromSource                                 IipAssignment[] @relation("PerfToIip")
+  users_performance_scores_coach_user_idTousers users           @relation("performance_scores_coach_user_idTousers", fields: [coachUserId], references: [id], onUpdate: NoAction)
+  users_performance_scores_created_byTousers    users?          @relation("performance_scores_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  player                                        Player          @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sourceEvent                                   Event?          @relation(fields: [sourceEventId], references: [id], onUpdate: NoAction)
+  team                                          Team            @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_performance_scores_updated_byTousers    users?          @relation("performance_scores_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("performance_scores")
+  @@schema("development")
+}
+
+model IipAssignment {
+  id                                         String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                  DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                  DateTime?             @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                  String?               @map("created_by") @db.Uuid
+  updatedBy                                  String?               @map("updated_by") @db.Uuid
+  metadata                                   Json                  @default("{}") @map("metadata")
+  teamId                                     String                @map("team_id") @db.Uuid
+  playerId                                   String                @map("player_id") @db.Uuid
+  coachUserId                                String                @map("coach_user_id") @db.Uuid
+  drillLibraryId                             String?               @map("drill_library_id") @db.Uuid
+  sourcePerformanceScoreId                   String?               @map("source_performance_score_id") @db.Uuid
+  title                                      String                @map("title")
+  description                                String?               @map("description")
+  dueAt                                      DateTime              @map("due_at") @db.Timestamptz(6)
+  status                                     iip_assignment_status @default(assigned)
+  xpEarned                                   Int                   @default(0) @map("xp_earned")
+  completedAt                                DateTime?             @map("completed_at") @db.Timestamptz(6)
+  completionNote                             String?               @map("completion_note")
+  users_iip_assignments_coach_user_idTousers users                 @relation("iip_assignments_coach_user_idTousers", fields: [coachUserId], references: [id], onUpdate: NoAction)
+  users_iip_assignments_created_byTousers    users?                @relation("iip_assignments_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  drill                                      DrillLibrary?         @relation(fields: [drillLibraryId], references: [id], onUpdate: NoAction)
+  player                                     Player                @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sourcePerformance                          PerformanceScore?     @relation("PerfToIip", fields: [sourcePerformanceScoreId], references: [id], onUpdate: NoAction)
+  team                                       Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_iip_assignments_updated_byTousers    users?                @relation("iip_assignments_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("iip_assignments")
+  @@schema("development")
+}
+
+model InjuryReport {
+  id                                       String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                                DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                                DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                                DateTime?              @map("deleted_at") @db.Timestamptz(6)
+  createdBy                                String?                @map("created_by") @db.Uuid
+  updatedBy                                String?                @map("updated_by") @db.Uuid
+  metadata                                 Json                   @default("{}") @map("metadata")
+  teamId                                   String                 @map("team_id") @db.Uuid
+  playerId                                 String                 @map("player_id") @db.Uuid
+  reportType                               injury_report_type     @default(staff_report) @map("report_type")
+  bodyPart                                 String                 @map("body_part")
+  painLevel                                Int                    @map("pain_level")
+  symptoms                                 String?                @map("symptoms")
+  participationLevel                       participation_level    @default(limited) @map("participation_level")
+  expectedReturnDate                       DateTime?              @map("expected_return_date") @db.Date
+  isActive                                 Boolean                @default(false) @map("is_active")
+  approvalStatus                           injury_approval_status @default(pending) @map("approval_status")
+  confirmedBy                              String?                @map("confirmed_by") @db.Uuid
+  confirmedAt                              DateTime?              @map("confirmed_at") @db.Timestamptz(6)
+  rejectedBy                               String?                @map("rejected_by") @db.Uuid
+  rejectedAt                               DateTime?              @map("rejected_at") @db.Timestamptz(6)
+  rejectReason                             String?                @map("reject_reason")
+  users_injury_reports_confirmed_byTousers users?                 @relation("injury_reports_confirmed_byTousers", fields: [confirmedBy], references: [id], onUpdate: NoAction)
+  users_injury_reports_created_byTousers   users?                 @relation("injury_reports_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  player                                   Player                 @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_injury_reports_rejected_byTousers  users?                 @relation("injury_reports_rejected_byTousers", fields: [rejectedBy], references: [id], onUpdate: NoAction)
+  team                                     Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_injury_reports_updated_byTousers   users?                 @relation("injury_reports_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("injury_reports")
+  @@schema("management")
+}
+
+model ConditionLog {
+  id                                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                              DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy                              String?   @map("created_by") @db.Uuid
+  updatedBy                              String?   @map("updated_by") @db.Uuid
+  metadata                               Json      @default("{}") @map("metadata")
+  teamId                                 String    @map("team_id") @db.Uuid
+  playerId                               String    @map("player_id") @db.Uuid
+  loggedOn                               DateTime  @default(dbgenerated("CURRENT_DATE")) @map("logged_on") @db.Date
+  conditionScore                         Decimal   @map("condition_score") @db.Decimal(4, 1)
+  energyScore                            Decimal   @map("energy_score") @db.Decimal(4, 1)
+  mentalScore                            Decimal   @map("mental_score") @db.Decimal(4, 1)
+  sleepHours                             Decimal?  @map("sleep_hours") @db.Decimal(4, 1)
+  notes                                  String?   @map("notes")
+  users_condition_logs_created_byTousers users?    @relation("condition_logs_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  player                                 Player    @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team                                   Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_condition_logs_updated_byTousers users?    @relation("condition_logs_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("condition_logs")
+  @@schema("management")
+}
+
+model MonthlyDue {
+  id                                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                            DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt                            DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  createdBy                            String?            @map("created_by") @db.Uuid
+  updatedBy                            String?            @map("updated_by") @db.Uuid
+  metadata                             Json               @default("{}") @map("metadata")
+  teamId                               String             @map("team_id") @db.Uuid
+  playerId                             String             @map("player_id") @db.Uuid
+  dueMonth                             String             @map("due_month") @db.Char(7)
+  amountCents                          BigInt             @default(0) @map("amount_cents")
+  currency                             String             @default("KRW") @map("currency")
+  status                               monthly_due_status @default(unpaid)
+  paidAt                               DateTime?          @map("paid_at") @db.Date
+  users_monthly_dues_created_byTousers users?             @relation("monthly_dues_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
+  player                               Player             @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team                                 Team               @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_monthly_dues_updated_byTousers users?             @relation("monthly_dues_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
+
+  @@map("monthly_dues")
+  @@schema("management")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_log_entries {
+  instance_id String?   @db.Uuid
+  id          String    @id @db.Uuid
+  payload     Json?     @db.Json
+  created_at  DateTime? @db.Timestamptz(6)
+  ip_address  String    @default("") @db.VarChar(64)
+
+  @@index([instance_id], map: "audit_logs_instance_id_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_oauth_providers {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type         String
+  identifier            String    @unique
+  name                  String
+  client_id             String
+  client_secret         String
+  acceptable_client_ids String[]  @default([])
+  scopes                String[]  @default([])
+  pkce_enabled          Boolean   @default(true)
+  attribute_mapping     Json      @default("{}")
+  authorization_params  Json      @default("{}")
+  enabled               Boolean   @default(true)
+  email_optional        Boolean   @default(false)
+  issuer                String?
+  discovery_url         String?
+  skip_nonce_check      Boolean   @default(false)
+  cached_discovery      Json?
+  discovery_cached_at   DateTime? @db.Timestamptz(6)
+  authorization_url     String?
+  token_url             String?
+  userinfo_url          String?
+  jwks_uri              String?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at])
+  @@index([enabled])
+  @@index([identifier])
+  @@index([provider_type])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model flow_state {
+  id                     String                 @id @db.Uuid
+  user_id                String?                @db.Uuid
+  auth_code              String?
+  code_challenge_method  code_challenge_method?
+  code_challenge         String?
+  provider_type          String
+  provider_access_token  String?
+  provider_refresh_token String?
+  created_at             DateTime?              @db.Timestamptz(6)
+  updated_at             DateTime?              @db.Timestamptz(6)
+  authentication_method  String
+  auth_code_issued_at    DateTime?              @db.Timestamptz(6)
+  invite_token           String?
+  referrer               String?
+  oauth_client_state_id  String?                @db.Uuid
+  linking_target_id      String?                @db.Uuid
+  email_optional         Boolean                @default(false)
+  saml_relay_states      saml_relay_states[]
+
+  @@index([created_at(sort: Desc)])
+  @@index([auth_code], map: "idx_auth_code")
+  @@index([user_id, authentication_method], map: "idx_user_id_auth_method")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model identities {
+  provider_id     String
+  user_id         String    @db.Uuid
+  identity_data   Json
+  provider        String
+  last_sign_in_at DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+  email           String?   @default(dbgenerated("lower((identity_data ->> 'email'::text))"))
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider_id, provider], map: "identities_provider_id_provider_unique")
+  @@index([email])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model instances {
+  id              String    @id @db.Uuid
+  uuid            String?   @db.Uuid
+  raw_base_config String?
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_amr_claims {
+  session_id            String   @db.Uuid
+  created_at            DateTime @db.Timestamptz(6)
+  updated_at            DateTime @db.Timestamptz(6)
+  authentication_method String
+  id                    String   @id(map: "amr_id_pk") @db.Uuid
+  sessions              sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([session_id, authentication_method], map: "mfa_amr_claims_session_id_authentication_method_pkey")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_challenges {
+  id                     String      @id @db.Uuid
+  factor_id              String      @db.Uuid
+  created_at             DateTime    @db.Timestamptz(6)
+  verified_at            DateTime?   @db.Timestamptz(6)
+  ip_address             String      @db.Inet
+  otp_code               String?
+  web_authn_session_data Json?
+  mfa_factors            mfa_factors @relation(fields: [factor_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "mfa_challenges_auth_factor_id_fkey")
+
+  @@index([created_at(sort: Desc)], map: "mfa_challenge_created_at_idx")
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mfa_factors {
+  id                           String           @id @db.Uuid
+  user_id                      String           @db.Uuid
+  friendly_name                String?
+  factor_type                  factor_type
+  status                       factor_status
+  created_at                   DateTime         @db.Timestamptz(6)
+  updated_at                   DateTime         @db.Timestamptz(6)
+  secret                       String?
+  phone                        String?
+  last_challenged_at           DateTime?        @unique @db.Timestamptz(6)
+  web_authn_credential         Json?
+  web_authn_aaguid             String?          @db.Uuid
+  last_webauthn_challenge_data Json?
+  mfa_challenges               mfa_challenges[]
+  users                        users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, phone], map: "unique_phone_factor_per_user")
+  @@index([user_id, created_at], map: "factor_id_created_at_idx")
+  @@index([user_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_authorizations {
+  id                    String                     @id @db.Uuid
+  authorization_id      String                     @unique
+  client_id             String                     @db.Uuid
+  user_id               String?                    @db.Uuid
+  redirect_uri          String
+  scope                 String
+  state                 String?
+  resource              String?
+  code_challenge        String?
+  code_challenge_method code_challenge_method?
+  response_type         oauth_response_type        @default(code)
+  status                oauth_authorization_status @default(pending)
+  authorization_code    String?                    @unique
+  created_at            DateTime                   @default(now()) @db.Timestamptz(6)
+  expires_at            DateTime                   @default(dbgenerated("(now() + '00:03:00'::interval)")) @db.Timestamptz(6)
+  approved_at           DateTime?                  @db.Timestamptz(6)
+  nonce                 String?
+  oauth_clients         oauth_clients              @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                 users?                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model oauth_client_states {
+  id            String   @id @db.Uuid
+  provider_type String
+  code_verifier String?
+  created_at    DateTime @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_oauth_client_states_created_at")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_clients {
+  id                         String                  @id @db.Uuid
+  client_secret_hash         String?
+  registration_type          oauth_registration_type
+  redirect_uris              String
+  grant_types                String
+  client_name                String?
+  client_uri                 String?
+  logo_uri                   String?
+  created_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  deleted_at                 DateTime?               @db.Timestamptz(6)
+  client_type                oauth_client_type       @default(confidential)
+  token_endpoint_auth_method String
+  oauth_authorizations       oauth_authorizations[]
+  oauth_consents             oauth_consents[]
+  sessions                   sessions[]
+
+  @@index([deleted_at])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model oauth_consents {
+  id            String        @id @db.Uuid
+  user_id       String        @db.Uuid
+  client_id     String        @db.Uuid
+  scopes        String
+  granted_at    DateTime      @default(now()) @db.Timestamptz(6)
+  revoked_at    DateTime?     @db.Timestamptz(6)
+  oauth_clients oauth_clients @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, client_id], map: "oauth_consents_user_client_unique")
+  @@index([user_id, granted_at(sort: Desc)], map: "oauth_consents_user_order_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model one_time_tokens {
+  id         String              @id @db.Uuid
+  user_id    String              @db.Uuid
+  token_type one_time_token_type
+  token_hash String
+  relates_to String
+  created_at DateTime            @default(now()) @db.Timestamp(6)
+  updated_at DateTime            @default(now()) @db.Timestamp(6)
+  users      users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, token_type])
+  @@index([relates_to], map: "one_time_tokens_relates_to_hash_idx", type: Hash)
+  @@index([token_hash], map: "one_time_tokens_token_hash_hash_idx", type: Hash)
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refresh_tokens {
+  instance_id String?   @db.Uuid
+  id          BigInt    @id @default(autoincrement())
+  token       String?   @unique(map: "refresh_tokens_token_unique") @db.VarChar(255)
+  user_id     String?   @db.VarChar(255)
+  revoked     Boolean?
+  created_at  DateTime? @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  parent      String?   @db.VarChar(255)
+  session_id  String?   @db.Uuid
+  sessions    sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([instance_id])
+  @@index([instance_id, user_id])
+  @@index([parent])
+  @@index([session_id, revoked])
+  @@index([updated_at(sort: Desc)])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model saml_providers {
+  id                String        @id @db.Uuid
+  sso_provider_id   String        @db.Uuid
+  entity_id         String        @unique
+  metadata_xml      String
+  metadata_url      String?
+  attribute_mapping Json?
+  created_at        DateTime?     @db.Timestamptz(6)
+  updated_at        DateTime?     @db.Timestamptz(6)
+  name_id_format    String?
+  sso_providers     sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model saml_relay_states {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  request_id      String
+  for_email       String?
+  redirect_to     String?
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  flow_state_id   String?       @db.Uuid
+  flow_state      flow_state?   @relation(fields: [flow_state_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)])
+  @@index([for_email])
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model schema_migrations {
+  version String @id @db.VarChar(255)
+
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id                     String           @id @db.Uuid
+  user_id                String           @db.Uuid
+  created_at             DateTime?        @db.Timestamptz(6)
+  updated_at             DateTime?        @db.Timestamptz(6)
+  factor_id              String?          @db.Uuid
+  aal                    aal_level?
+  not_after              DateTime?        @db.Timestamptz(6)
+  refreshed_at           DateTime?        @db.Timestamp(6)
+  user_agent             String?
+  ip                     String?          @db.Inet
+  tag                    String?
+  oauth_client_id        String?          @db.Uuid
+  refresh_token_hmac_key String?
+  refresh_token_counter  BigInt?
+  scopes                 String?
+  mfa_amr_claims         mfa_amr_claims[]
+  refresh_tokens         refresh_tokens[]
+  oauth_clients          oauth_clients?   @relation(fields: [oauth_client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                  users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([not_after(sort: Desc)])
+  @@index([oauth_client_id])
+  @@index([user_id])
+  @@index([user_id, created_at], map: "user_id_created_at_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_domains {
+  id              String        @id @db.Uuid
+  sso_provider_id String        @db.Uuid
+  domain          String
+  created_at      DateTime?     @db.Timestamptz(6)
+  updated_at      DateTime?     @db.Timestamptz(6)
+  sso_providers   sso_providers @relation(fields: [sso_provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sso_provider_id])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sso_providers {
+  id                String              @id @db.Uuid
+  resource_id       String?
+  created_at        DateTime?           @db.Timestamptz(6)
+  updated_at        DateTime?           @db.Timestamptz(6)
+  disabled          Boolean?
+  saml_providers    saml_providers[]
+  saml_relay_states saml_relay_states[]
+  sso_domains       sso_domains[]
+
+  @@index([resource_id], map: "sso_providers_resource_id_pattern_idx")
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model users {
+  instance_id                                                  String?                @db.Uuid
+  id                                                           String                 @id @db.Uuid
+  aud                                                          String?                @db.VarChar(255)
+  role                                                         String?                @db.VarChar(255)
+  email                                                        String?                @db.VarChar(255)
+  encrypted_password                                           String?                @db.VarChar(255)
+  email_confirmed_at                                           DateTime?              @db.Timestamptz(6)
+  invited_at                                                   DateTime?              @db.Timestamptz(6)
+  confirmation_token                                           String?                @db.VarChar(255)
+  confirmation_sent_at                                         DateTime?              @db.Timestamptz(6)
+  recovery_token                                               String?                @db.VarChar(255)
+  recovery_sent_at                                             DateTime?              @db.Timestamptz(6)
+  email_change_token_new                                       String?                @db.VarChar(255)
+  email_change                                                 String?                @db.VarChar(255)
+  email_change_sent_at                                         DateTime?              @db.Timestamptz(6)
+  last_sign_in_at                                              DateTime?              @db.Timestamptz(6)
+  raw_app_meta_data                                            Json?
+  raw_user_meta_data                                           Json?
+  is_super_admin                                               Boolean?
+  created_at                                                   DateTime?              @db.Timestamptz(6)
+  updated_at                                                   DateTime?              @db.Timestamptz(6)
+  phone                                                        String?                @unique
+  phone_confirmed_at                                           DateTime?              @db.Timestamptz(6)
+  phone_change                                                 String?                @default("")
+  phone_change_token                                           String?                @default("") @db.VarChar(255)
+  phone_change_sent_at                                         DateTime?              @db.Timestamptz(6)
+  confirmed_at                                                 DateTime?              @default(dbgenerated("LEAST(email_confirmed_at, phone_confirmed_at)")) @db.Timestamptz(6)
+  email_change_token_current                                   String?                @default("") @db.VarChar(255)
+  email_change_confirm_status                                  Int?                   @default(0) @db.SmallInt
+  banned_until                                                 DateTime?              @db.Timestamptz(6)
+  reauthentication_token                                       String?                @default("") @db.VarChar(255)
+  reauthentication_sent_at                                     DateTime?              @db.Timestamptz(6)
+  is_sso_user                                                  Boolean                @default(false)
+  deleted_at                                                   DateTime?              @db.Timestamptz(6)
+  is_anonymous                                                 Boolean                @default(false)
+  identities                                                   identities[]
+  mfa_factors                                                  mfa_factors[]
+  oauth_authorizations                                         oauth_authorizations[]
+  oauth_consents                                               oauth_consents[]
+  one_time_tokens                                              one_time_tokens[]
+  sessions                                                     sessions[]
+  webauthn_challenges                                          webauthn_challenges[]
+  webauthn_credentials                                         webauthn_credentials[]
+  join_requests_join_requests_created_byTousers                JoinRequest[]          @relation("join_requests_created_byTousers")
+  join_requests_join_requests_reviewed_byTousers               JoinRequest[]          @relation("join_requests_reviewed_byTousers")
+  join_requests_join_requests_updated_byTousers                JoinRequest[]          @relation("join_requests_updated_byTousers")
+  join_requests_join_requests_user_idTousers                   JoinRequest[]          @relation("join_requests_user_idTousers")
+  players_players_created_byTousers                            Player[]               @relation("players_created_byTousers")
+  players_players_linked_user_idTousers                        Player[]               @relation("players_linked_user_idTousers")
+  players_players_updated_byTousers                            Player[]               @relation("players_updated_byTousers")
+  profiles_profiles_created_byTousers                          Profile[]              @relation("profiles_created_byTousers")
+  profiles_profiles_idTousers                                  Profile?               @relation("profiles_idTousers")
+  profiles_profiles_updated_byTousers                          Profile[]              @relation("profiles_updated_byTousers")
+  team_members_team_members_created_byTousers                  TeamMember[]           @relation("team_members_created_byTousers")
+  team_members_team_members_invited_byTousers                  TeamMember[]           @relation("team_members_invited_byTousers")
+  team_members_team_members_updated_byTousers                  TeamMember[]           @relation("team_members_updated_byTousers")
+  team_members_team_members_user_idTousers                     TeamMember[]           @relation("team_members_user_idTousers")
+  teams_teams_created_byTousers                                Team[]                 @relation("teams_created_byTousers")
+  teams_teams_owner_user_idTousers                             Team[]                 @relation("teams_owner_user_idTousers")
+  teams_teams_updated_byTousers                                Team[]                 @relation("teams_updated_byTousers")
+  drill_library_drill_library_created_byTousers                DrillLibrary[]         @relation("drill_library_created_byTousers")
+  drill_library_drill_library_updated_byTousers                DrillLibrary[]         @relation("drill_library_updated_byTousers")
+  iip_assignments_iip_assignments_coach_user_idTousers         IipAssignment[]        @relation("iip_assignments_coach_user_idTousers")
+  iip_assignments_iip_assignments_created_byTousers            IipAssignment[]        @relation("iip_assignments_created_byTousers")
+  iip_assignments_iip_assignments_updated_byTousers            IipAssignment[]        @relation("iip_assignments_updated_byTousers")
+  performance_scores_performance_scores_coach_user_idTousers   PerformanceScore[]     @relation("performance_scores_coach_user_idTousers")
+  performance_scores_performance_scores_created_byTousers      PerformanceScore[]     @relation("performance_scores_created_byTousers")
+  performance_scores_performance_scores_updated_byTousers      PerformanceScore[]     @relation("performance_scores_updated_byTousers")
+  condition_logs_condition_logs_created_byTousers              ConditionLog[]         @relation("condition_logs_created_byTousers")
+  condition_logs_condition_logs_updated_byTousers              ConditionLog[]         @relation("condition_logs_updated_byTousers")
+  injury_reports_injury_reports_confirmed_byTousers            InjuryReport[]         @relation("injury_reports_confirmed_byTousers")
+  injury_reports_injury_reports_created_byTousers              InjuryReport[]         @relation("injury_reports_created_byTousers")
+  injury_reports_injury_reports_rejected_byTousers             InjuryReport[]         @relation("injury_reports_rejected_byTousers")
+  injury_reports_injury_reports_updated_byTousers              InjuryReport[]         @relation("injury_reports_updated_byTousers")
+  monthly_dues_monthly_dues_created_byTousers                  MonthlyDue[]           @relation("monthly_dues_created_byTousers")
+  monthly_dues_monthly_dues_updated_byTousers                  MonthlyDue[]           @relation("monthly_dues_updated_byTousers")
+  attendance_attendance_created_byTousers                      Attendance[]           @relation("attendance_created_byTousers")
+  attendance_attendance_last_changed_by_user_idTousers         Attendance[]           @relation("attendance_last_changed_by_user_idTousers")
+  attendance_attendance_updated_byTousers                      Attendance[]           @relation("attendance_updated_byTousers")
+  events_events_created_byTousers                              Event[]                @relation("events_created_byTousers")
+  events_events_updated_byTousers                              Event[]                @relation("events_updated_byTousers")
+  practice_checkins_practice_checkins_coach_user_idTousers     PracticeCheckin[]      @relation("practice_checkins_coach_user_idTousers")
+  practice_checkins_practice_checkins_created_byTousers        PracticeCheckin[]      @relation("practice_checkins_created_byTousers")
+  practice_checkins_practice_checkins_updated_byTousers        PracticeCheckin[]      @relation("practice_checkins_updated_byTousers")
+  training_blocks_training_blocks_coach_user_idTousers         TrainingBlock[]        @relation("training_blocks_coach_user_idTousers")
+  training_blocks_training_blocks_created_byTousers            TrainingBlock[]        @relation("training_blocks_created_byTousers")
+  training_blocks_training_blocks_updated_byTousers            TrainingBlock[]        @relation("training_blocks_updated_byTousers")
+  training_schedules_training_schedules_approved_byTousers     TrainingSchedule[]     @relation("training_schedules_approved_byTousers")
+  training_schedules_training_schedules_coach_author_idTousers TrainingSchedule[]     @relation("training_schedules_coach_author_idTousers")
+  training_schedules_training_schedules_created_byTousers      TrainingSchedule[]     @relation("training_schedules_created_byTousers")
+  training_schedules_training_schedules_rejected_byTousers     TrainingSchedule[]     @relation("training_schedules_rejected_byTousers")
+  training_schedules_training_schedules_updated_byTousers      TrainingSchedule[]     @relation("training_schedules_updated_byTousers")
+
+  @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
+  @@index([email], map: "idx_users_email")
+  @@index([last_sign_in_at(sort: Desc)], map: "idx_users_last_sign_in_at_desc")
+  @@index([instance_id])
+  @@index([is_anonymous])
+  @@schema("auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model webauthn_challenges {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String?  @db.Uuid
+  challenge_type String
+  session_data   Json
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  expires_at     DateTime @db.Timestamptz(6)
+  users          users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expires_at])
+  @@index([user_id])
+  @@schema("auth")
+}
+
+model webauthn_credentials {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  credential_id    Bytes     @unique
+  public_key       Bytes
+  attestation_type String    @default("")
+  aaguid           String?   @db.Uuid
+  sign_count       BigInt    @default(0)
+  transports       Json      @default("[]")
+  backup_eligible  Boolean   @default(false)
+  backed_up        Boolean   @default(false)
+  friendly_name    String    @default("")
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  last_used_at     DateTime? @db.Timestamptz(6)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id])
+  @@schema("auth")
+}
+
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+  phone
+
+  @@schema("auth")
+}
+
+enum oauth_authorization_status {
+  pending
+  approved
+  denied
+  expired
+
+  @@schema("auth")
+}
+
+enum oauth_client_type {
+  public
+  confidential
+
+  @@schema("auth")
+}
+
+enum oauth_registration_type {
+  dynamic
+  manual
+
+  @@schema("auth")
+}
+
+enum oauth_response_type {
+  code
+
+  @@schema("auth")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
+}
+
+enum join_request_status {
   pending
   approved
   rejected
@@ -26,26 +1111,7 @@ enum JoinRequestStatus {
   @@schema("core")
 }
 
-enum TeamMemberRole {
-  manager
-  head_coach
-  part_coach
-  player
-  staff
-
-  @@schema("core")
-}
-
-enum TeamMemberStatus {
-  pending
-  active
-  suspended
-  left
-
-  @@schema("core")
-}
-
-enum PlayerRosterStatus {
+enum player_roster_status {
   active
   injured
   leave_absence
@@ -56,11 +1122,84 @@ enum PlayerRosterStatus {
   @@schema("core")
 }
 
-// ---------------------------------------------------------------------------
-// training enums
-// ---------------------------------------------------------------------------
+enum team_member_role {
+  manager
+  head_coach
+  part_coach
+  player
+  staff
 
-enum EventType {
+  @@schema("core")
+}
+
+enum team_member_status {
+  pending
+  active
+  suspended
+  left
+
+  @@schema("core")
+}
+
+enum iip_assignment_status {
+  assigned
+  in_progress
+  completed
+  cancelled
+  expired
+
+  @@schema("development")
+}
+
+enum injury_approval_status {
+  pending
+  confirmed
+  rejected
+
+  @@schema("management")
+}
+
+enum injury_report_type {
+  player_self
+  staff_report
+
+  @@schema("management")
+}
+
+enum monthly_due_status {
+  unpaid
+  paid
+  waived
+  partial
+
+  @@schema("management")
+}
+
+enum participation_level {
+  full
+  limited
+  out
+
+  @@schema("management")
+}
+
+enum attendance_status {
+  attending
+  absent
+  undecided
+
+  @@schema("training")
+}
+
+enum event_status {
+  scheduled
+  cancelled
+  completed
+
+  @@schema("training")
+}
+
+enum event_type {
   practice
   game
   meeting
@@ -69,34 +1208,22 @@ enum EventType {
   @@schema("training")
 }
 
-enum EventStatus {
-  scheduled
-  cancelled
-  completed
-
-  @@schema("training")
-}
-
-enum AttendanceStatus {
-  attending
-  absent
-  undecided
-
-  @@schema("training")
-}
-
-enum TrainingScheduleStatus {
+enum practice_checkin_status {
   draft
   submitted
-  approved
-  rejected
-  published
-  archived
 
   @@schema("training")
 }
 
-enum TrainingBlockType {
+enum training_block_intensity {
+  low
+  medium
+  high
+
+  @@schema("training")
+}
+
+enum training_block_type {
   drill
   break
   meeting
@@ -107,15 +1234,7 @@ enum TrainingBlockType {
   @@schema("training")
 }
 
-enum TrainingBlockIntensity {
-  low
-  medium
-  high
-
-  @@schema("training")
-}
-
-enum TrainingColumnUnit {
+enum training_column_unit {
   team
   offense
   defense
@@ -124,531 +1243,30 @@ enum TrainingColumnUnit {
   @@schema("training")
 }
 
-enum PracticeCheckinStatus {
+enum training_schedule_status {
   draft
   submitted
-
-  @@schema("training")
-}
-
-// ---------------------------------------------------------------------------
-// development enums
-// ---------------------------------------------------------------------------
-
-enum IipAssignmentStatus {
-  assigned
-  in_progress
-  completed
-  cancelled
-  expired
-
-  @@schema("development")
-}
-
-// ---------------------------------------------------------------------------
-// management enums
-// ---------------------------------------------------------------------------
-
-enum MonthlyDueStatus {
-  unpaid
-  paid
-  waived
-  partial
-
-  @@schema("management")
-}
-
-enum InjuryApprovalStatus {
-  pending
-  confirmed
+  approved
   rejected
+  published
+  archived
 
-  @@schema("management")
+  @@schema("training")
 }
 
-enum InjuryReportType {
-  player_self
-  staff_report
-
-  @@schema("management")
-}
-
-enum ParticipationLevel {
-  full
-  limited
-  out
-
-  @@schema("management")
-}
-
-// ---------------------------------------------------------------------------
-// core
-// ---------------------------------------------------------------------------
-
-model Team {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy   String?   @map("created_by") @db.Uuid
-  updatedBy   String?   @map("updated_by") @db.Uuid
-  metadata    Json      @default("{}") @map("metadata") @db.JsonB
-
-  name         String  @map("name")
-  teamCode     String  @unique @map("team_code")
-  sport        String  @default("american_football") @map("sport")
-  city         String? @map("city")
-  seasonYear   Int     @map("season_year")
-  description  String? @map("description")
-  ownerUserId  String? @map("owner_user_id") @db.Uuid
-
-  players           Player[]
-  teamMembers       TeamMember[]
-  joinRequests      JoinRequest[]
-  events            Event[]
-  attendances       Attendance[]
-  trainingSchedules TrainingSchedule[]
-  drillLibraries    DrillLibrary[]
-  performanceScores PerformanceScore[]
-  iipAssignments    IipAssignment[]
-  injuryReports     InjuryReport[]
-  conditionLogs     ConditionLog[]
-  monthlyDues       MonthlyDue[]
-  practiceCheckins  PracticeCheckin[]
+enum MediaType {
+  IMAGE
+  VIDEO
 
   @@schema("core")
-  @@map("teams")
 }
 
-model Profile {
-  id        String    @id @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  displayName String? @map("display_name")
-  phone       String? @map("phone")
-  birthYear   Int?    @map("birth_year")
-  avatarUrl   String? @map("avatar_url")
+enum MediaContext {
+  PROFILE
+  DRILL
+  TEAM_LOGO
+  INJURY
+  POST
 
   @@schema("core")
-  @@map("profiles")
-}
-
-model Player {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId           String             @map("team_id") @db.Uuid
-  team             Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  linkedUserId     String?            @map("linked_user_id") @db.Uuid
-  fullName         String             @map("full_name")
-  jerseyNumber     Int?               @map("jersey_number")
-  primaryPosition  String?            @map("primary_position")
-  secondaryPosition String?           @map("secondary_position")
-  unit             String?            @map("unit")
-  heightCm         Decimal?           @map("height_cm") @db.Decimal(5, 1)
-  weightKg         Decimal?           @map("weight_kg") @db.Decimal(5, 1)
-  joinYear         Int?               @map("join_year")
-  rosterStatus     PlayerRosterStatus @default(active) @map("roster_status")
-  notes            String?            @map("notes")
-
-  teamMembers       TeamMember[]
-  attendances       Attendance[]
-  performanceScores PerformanceScore[]
-  iipAssignments    IipAssignment[]
-  injuryReports     InjuryReport[]
-  conditionLogs     ConditionLog[]
-  monthlyDues       MonthlyDue[]
-  practiceCheckins  PracticeCheckin[]
-
-  @@schema("core")
-  @@map("players")
-}
-
-model TeamMember {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId    String             @map("team_id") @db.Uuid
-  team      Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId    String             @map("user_id") @db.Uuid
-  role      TeamMemberRole
-  status    TeamMemberStatus   @default(pending)
-  playerId  String?            @map("player_id") @db.Uuid
-  player    Player?            @relation(fields: [playerId], references: [id])
-  joinedAt  DateTime?          @map("joined_at") @db.Timestamptz(6)
-  invitedBy String?            @map("invited_by") @db.Uuid
-
-  @@unique([teamId, userId])
-  @@schema("core")
-  @@map("team_members")
-}
-
-model JoinRequest {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId            String            @map("team_id") @db.Uuid
-  team              Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId            String            @map("user_id") @db.Uuid
-  requestedRole     TeamMemberRole    @map("requested_role")
-  requestedPosition String?         @map("requested_position")
-  requestedUnit     String?          @map("requested_unit")
-  jerseyNumber      Int?             @map("jersey_number")
-  heightCm          Decimal?         @map("height_cm") @db.Decimal(5, 1)
-  weightKg          Decimal?         @map("weight_kg") @db.Decimal(5, 1)
-  message           String            @map("message")
-  status            JoinRequestStatus @default(pending)
-  reviewedBy        String?          @map("reviewed_by") @db.Uuid
-  reviewedAt        DateTime?        @map("reviewed_at") @db.Timestamptz(6)
-  rejectReason      String?          @map("reject_reason")
-
-  @@index([teamId, status])
-  @@schema("core")
-  @@map("join_requests")
-}
-
-// ---------------------------------------------------------------------------
-// training
-// ---------------------------------------------------------------------------
-
-model Event {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId      String      @map("team_id") @db.Uuid
-  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  title       String      @map("title")
-  eventType   EventType   @default(practice) @map("event_type")
-  startsAt    DateTime    @map("starts_at") @db.Timestamptz(6)
-  endsAt      DateTime?   @map("ends_at") @db.Timestamptz(6)
-  location    String?     @map("location")
-  opponent    String?     @map("opponent")
-  isMandatory Boolean     @default(false) @map("is_mandatory")
-  notes       String?     @map("notes")
-  status      EventStatus @default(scheduled)
-
-  attendances       Attendance[]
-  performanceScores PerformanceScore[]
-  practiceCheckins  PracticeCheckin[]
-
-  @@index([teamId, startsAt])
-  @@schema("training")
-  @@map("events")
-}
-
-model Attendance {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId              String           @map("team_id") @db.Uuid
-  team                Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  eventId             String           @map("event_id") @db.Uuid
-  event               Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  playerId            String           @map("player_id") @db.Uuid
-  player              Player           @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  status              AttendanceStatus @default(undecided)
-  absenceReason       String?          @map("absence_reason")
-  lastChangedByUserId String?          @map("last_changed_by_user_id") @db.Uuid
-
-  @@unique([eventId, playerId])
-  @@index([teamId, eventId])
-  @@schema("training")
-  @@map("attendance")
-}
-
-model TrainingSchedule {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId        String                 @map("team_id") @db.Uuid
-  team          Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  title         String                 @map("title")
-  scheduleDate  DateTime               @map("schedule_date") @db.Date
-  timezone      String                 @default("Asia/Seoul") @map("timezone")
-  location      String?                @map("location")
-  status        TrainingScheduleStatus @default(draft)
-  coachAuthorId String?                @map("coach_author_id") @db.Uuid
-  submittedAt   DateTime?              @map("submitted_at") @db.Timestamptz(6)
-  approvedBy    String?                @map("approved_by") @db.Uuid
-  approvedAt    DateTime?              @map("approved_at") @db.Timestamptz(6)
-  rejectedBy    String?                @map("rejected_by") @db.Uuid
-  rejectedAt    DateTime?              @map("rejected_at") @db.Timestamptz(6)
-  rejectReason  String?                @map("reject_reason")
-  publishedAt   DateTime?              @map("published_at") @db.Timestamptz(6)
-
-  blocks TrainingBlock[]
-
-  @@index([teamId, scheduleDate])
-  @@index([teamId, status])
-  @@schema("training")
-  @@map("training_schedules")
-}
-
-model TrainingBlock {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  trainingScheduleId String                 @map("training_schedule_id") @db.Uuid
-  schedule           TrainingSchedule       @relation(fields: [trainingScheduleId], references: [id], onDelete: Cascade)
-  coachUserId        String                 @map("coach_user_id") @db.Uuid
-  blockType          TrainingBlockType      @default(drill) @map("block_type")
-  columnUnit         TrainingColumnUnit     @map("column_unit")
-  title              String                 @map("title")
-  startsAt           DateTime               @map("starts_at") @db.Timestamptz(6)
-  endsAt             DateTime               @map("ends_at") @db.Timestamptz(6)
-  intensity          TrainingBlockIntensity? @map("intensity")
-  positionFocus      String?                @map("position_focus")
-  sortOrder          Int                    @default(0) @map("sort_order")
-  parentBlockId      String?                @map("parent_block_id") @db.Uuid
-  parentBlock        TrainingBlock?         @relation("BlockHierarchy", fields: [parentBlockId], references: [id])
-  childBlocks        TrainingBlock[]        @relation("BlockHierarchy")
-
-  @@index([trainingScheduleId])
-  @@schema("training")
-  @@map("training_blocks")
-}
-
-model PracticeCheckin {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId               String                @map("team_id") @db.Uuid
-  team                 Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId             String                @map("player_id") @db.Uuid
-  player               Player                @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  coachUserId          String?               @map("coach_user_id") @db.Uuid
-  eventId              String?               @map("event_id") @db.Uuid
-  event                Event?                @relation(fields: [eventId], references: [id])
-  practiceDate         DateTime              @map("practice_date") @db.Date
-  status               PracticeCheckinStatus @default(draft)
-  starRating           Int?                  @map("star_rating")
-  effortTag            String?               @map("effort_tag")
-  coachCommentOneLiner String?               @map("coach_comment_one_liner")
-
-  @@index([teamId, playerId, practiceDate])
-  @@schema("training")
-  @@map("practice_checkins")
-}
-
-// ---------------------------------------------------------------------------
-// development
-// ---------------------------------------------------------------------------
-
-model DrillLibrary {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId             String?   @map("team_id") @db.Uuid
-  team               Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  name               String    @map("name")
-  description        String?   @map("description")
-  defaultXp          Int       @default(0) @map("default_xp")
-  suggestedUnit      String?   @map("suggested_unit")
-  suggestedPositions String[]  @map("suggested_positions")
-
-  iipAssignments IipAssignment[]
-
-  @@index([teamId])
-  @@schema("development")
-  @@map("drill_library")
-}
-
-model PerformanceScore {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId           String    @map("team_id") @db.Uuid
-  team             Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId         String    @map("player_id") @db.Uuid
-  player           Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  coachUserId      String    @map("coach_user_id") @db.Uuid
-  sourceEventId    String?   @map("source_event_id") @db.Uuid
-  sourceEvent      Event?    @relation(fields: [sourceEventId], references: [id])
-  evaluatedOn      DateTime  @map("evaluated_on") @db.Date
-  physical         Decimal   @map("physical") @db.Decimal(4, 1)
-  skill            Decimal   @map("skill") @db.Decimal(4, 1)
-  tactical         Decimal   @map("tactical") @db.Decimal(4, 1)
-  attendanceMetric Decimal   @map("attendance_metric") @db.Decimal(4, 1)
-  mental           Decimal   @map("mental") @db.Decimal(4, 1)
-  coachComment     String?   @map("coach_comment")
-  keywordTags      String[]  @default([]) @map("keyword_tags")
-  isVisibleToPlayer Boolean  @default(true) @map("is_visible_to_player")
-
-  iipFromSource IipAssignment[] @relation("PerfToIip")
-
-  @@index([teamId, playerId])
-  @@schema("development")
-  @@map("performance_scores")
-}
-
-model IipAssignment {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId                   String              @map("team_id") @db.Uuid
-  team                     Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId                 String              @map("player_id") @db.Uuid
-  player                   Player              @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  coachUserId              String              @map("coach_user_id") @db.Uuid
-  drillLibraryId           String?             @map("drill_library_id") @db.Uuid
-  drill                    DrillLibrary?       @relation(fields: [drillLibraryId], references: [id])
-  sourcePerformanceScoreId String?             @map("source_performance_score_id") @db.Uuid
-  sourcePerformance        PerformanceScore?   @relation("PerfToIip", fields: [sourcePerformanceScoreId], references: [id])
-  title                    String              @map("title")
-  description              String?             @map("description")
-  dueAt                    DateTime            @map("due_at") @db.Timestamptz(6)
-  status                   IipAssignmentStatus @default(assigned)
-  xpEarned                 Int                 @default(0) @map("xp_earned")
-  completedAt              DateTime?           @map("completed_at") @db.Timestamptz(6)
-  completionNote           String?             @map("completion_note")
-
-  @@index([teamId, playerId, status])
-  @@index([sourcePerformanceScoreId])
-  @@schema("development")
-  @@map("iip_assignments")
-}
-
-// ---------------------------------------------------------------------------
-// management
-// ---------------------------------------------------------------------------
-
-model InjuryReport {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId               String                 @map("team_id") @db.Uuid
-  team                 Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId             String                 @map("player_id") @db.Uuid
-  player               Player                 @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  reportType           InjuryReportType       @default(staff_report) @map("report_type")
-  bodyPart             String                 @map("body_part")
-  painLevel            Int                    @map("pain_level")
-  symptoms             String?                @map("symptoms")
-  participationLevel   ParticipationLevel     @map("participation_level")
-  expectedReturnDate   DateTime?              @map("expected_return_date") @db.Date
-  isActive             Boolean                @default(false) @map("is_active")
-  approvalStatus       InjuryApprovalStatus   @default(pending) @map("approval_status")
-  confirmedBy          String?                @map("confirmed_by") @db.Uuid
-  confirmedAt          DateTime?              @map("confirmed_at") @db.Timestamptz(6)
-  rejectedBy           String?                @map("rejected_by") @db.Uuid
-  rejectedAt           DateTime?              @map("rejected_at") @db.Timestamptz(6)
-  rejectReason         String?                @map("reject_reason")
-
-  @@index([teamId, approvalStatus])
-  @@schema("management")
-  @@map("injury_reports")
-}
-
-model ConditionLog {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId         String   @map("team_id") @db.Uuid
-  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId       String   @map("player_id") @db.Uuid
-  player         Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  loggedOn       DateTime @map("logged_on") @db.Date
-  conditionScore Decimal  @map("condition_score") @db.Decimal(4, 1)
-  energyScore    Decimal  @map("energy_score") @db.Decimal(4, 1)
-  mentalScore    Decimal  @map("mental_score") @db.Decimal(4, 1)
-  sleepHours     Decimal? @map("sleep_hours") @db.Decimal(4, 1)
-  notes          String?  @map("notes")
-
-  @@index([playerId, loggedOn])
-  @@schema("management")
-  @@map("condition_logs")
-}
-
-model MonthlyDue {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdBy String?   @map("created_by") @db.Uuid
-  updatedBy String?   @map("updated_by") @db.Uuid
-  metadata  Json      @default("{}") @map("metadata") @db.JsonB
-
-  teamId      String           @map("team_id") @db.Uuid
-  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  playerId    String           @map("player_id") @db.Uuid
-  player      Player           @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  dueMonth    String           @map("due_month") @db.Char(7)
-  amountCents BigInt           @default(0) @map("amount_cents")
-  currency    String           @default("KRW") @map("currency")
-  status      MonthlyDueStatus @default(unpaid)
-  paidAt      DateTime?        @map("paid_at") @db.Date
-
-  @@unique([teamId, playerId, dueMonth])
-  @@schema("management")
-  @@map("monthly_dues")
 }
