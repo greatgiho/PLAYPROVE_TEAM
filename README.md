@@ -74,6 +74,7 @@ database/             # ERD 등 보조 문서
 | [docs/documentation-governance-report.md](docs/documentation-governance-report.md) | 문서 거버넌스 — 백엔드·DBA 유지 문서·역할·모듈식 DB |
 | [docs/cursor-rules-consistency-audit.md](docs/cursor-rules-consistency-audit.md) | Cursor 규칙 대비 소스 일관성 점검 |
 | [docs/codebase-maturity-assessment.md](docs/codebase-maturity-assessment.md) | 폴더·구조 인상 정리(초보 틱 vs 전문가 시선) + 데이터 모드(로컬/API) |
+| [docs/gemini-pm-checklist-review.md](docs/gemini-pm-checklist-review.md) | PM식 확장·문서·UI 분리 체크리스트 대비 코드베이스 검토 |
 | [database/ERD.md](database/ERD.md) | 엔티티 관계 (Prisma·마이그레이션 기준) |
 
 ---
