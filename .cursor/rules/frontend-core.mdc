@@ -1,0 +1,30 @@
+---
+description: PlayProve 프론트 구조·데이터 진입 규칙 (페이지·컴포넌트·팀 설정)
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# 프론트 코어 규칙
+
+## 페이지 (`src/app/**/page.tsx`)
+
+- **얇게 유지**: 라우팅, `AccessGuard`, 레이아웃 조합, 훅/데이터 연결만. 복잡한 UI·상태는 `src/components/features/<도메인>/` 또는 기존 `components/<도메인>/`로 분리.
+- 새 **대형 화면**은 처음부터 `page.tsx` 200줄 넘지 않도록 설계.
+
+## 팀 코드·DB 모드
+
+- 클라이언트에서 팀 코드가 필요하면 **`@/lib/config`의 `getPlayproveTeamCode()` / `hasPlayproveTeamCode()`만** 사용. `process.env.NEXT_PUBLIC_PLAYPROVE_TEAM_CODE`를 페이지에 직접 반복하지 않음.
+- 서버 라우트·`lib/server`에서도 동일 모듈 사용 가능(동일 env 키).
+
+## 데이터
+
+- 신규 **팀 API** 호출은 가능하면 한 패턴으로: `fetch` + `credentials: "include"` + `apiErrorUserHint` (기존 출결·훈련 API와 동일 계열).
+- `getTeamDataServices()`(로컬 데모)와 Prisma API를 **같은 화면에서 섞지 않기**; 새 기능은 API 경로 우선.
+
+## import
+
+- 경로 별칭 `@/` 사용. 깊은 상대경로 `../../../` 지양.
+
+## 실행계획
+
+- 세부 단계·우선순위: `docs/frontend-refactor-execution-plan.md`

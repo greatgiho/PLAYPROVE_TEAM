@@ -1,8 +1,17 @@
-@import "../styles/legacy-css/style.css";
+/* 디자인 토큰 → Tailwind theme.extend(app.*)와 동기 */
+@import "../styles/app-tokens.css";
+/*
+ * 레거시 전역(style.css)에서 앱 쉘(사이드바·topbar·page-content)만 제거한 번들.
+ * 쉘은 AppShell.tsx + Tailwind. 나머지 카드·표·폼 등은 점진적 Tailwind 이행 예정.
+ */
+@import "../styles/legacy-components-trimmed.css";
 @import "../styles/legacy-css/style_v2.css";
 @import "../styles/legacy-css/auth.css";
 
-/* Next.js root fills viewport */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html,
 body {
   height: 100%;
@@ -13,7 +22,6 @@ body > div {
   min-height: 100%;
 }
 
-/* App Router pages use .page-content inside legacy shell */
 .next-page-root {
   width: 100%;
 }

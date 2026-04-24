@@ -5,6 +5,7 @@ import {
   sortTeamMembersForRoster,
 } from "@/lib/mappers/prismaTeamMemberToRosterRow";
 import { playerEntityToRosterRow } from "@/lib/mappers/playerEntityToRosterRow";
+import { getPlayproveTeamCode } from "@/lib/config";
 import { team_member_role } from "@prisma/client";
 import { NextResponse } from "next/server";
 
@@ -15,10 +16,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const teamCode =
-    searchParams.get("teamCode")?.trim() ||
-    process.env.NEXT_PUBLIC_PLAYPROVE_TEAM_CODE?.trim() ||
-    "";
+  const teamCode = searchParams.get("teamCode")?.trim() || getPlayproveTeamCode();
 
   if (!teamCode) {
     return NextResponse.json(

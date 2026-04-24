@@ -1,0 +1,19 @@
+/**
+ * 앱 ERP 영역 공통 토큰 — 레거시 전역 CSS와 병행.
+ * Tailwind theme.extend 의 app.* 와 동기화할 것.
+ */
+:root {
+  --app-surface: #ffffff;
+  --app-surface-muted: #f9fafb;
+  --app-border: #e5e7eb;
+  --app-text: #111827;
+  --app-text-muted: #6b7280;
+  --app-radius: 12px;
+  --app-radius-sm: 8px;
+  --app-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  /* TSX 인라인에서 쓰는 레거시 팔레트 보조 (legacy-components-trimmed :root 와 병행) */
+  --gray-600: #5c5c5c;
+  --gray-800: #2d2d2d;
+  --danger: #b42318;
+  --login-primary: #70201f;
+}

@@ -1,0 +1,52 @@
+---
+description: PlayProve 백엔드 — API 라우트·Prisma·인증·팀 스코프 일관 규칙
+globs: "{src/app/api/**/route.ts,src/middleware.ts,src/lib/prisma.ts,src/lib/server/**/*.ts,src/lib/auth/**/*.ts,prisma/schema.prisma,prisma/seed.ts}"
+alwaysApply: false
+---
+
+# 백엔드 코어 규칙
+
+Next.js **Route Handlers** + **Prisma** + Postgres(Supabase) 기준. 동작·API 계약을 바꾸는 변경은 PR/이슈에서 명시한다.
+
+## Prisma·DB
+
+- 클라이언트는 **`@/lib/prisma`의 `prisma`만** 사용. 라우트나 헬퍼에서 `new PrismaClient()` 금지.
+- 스키마는 **multi-schema**(`datasource.schemas`)를 전제로 한다. 새 모델은 기존 도메인 스키마(`core`, `training` 등)에 맞춰 배치하고, 임의로 `public`에 몰지 않는다.
+- **DDL 변경은 마이그레이션**(`prisma/migrations`)으로만 반영한다. 프로덕션 DB에 `db push`만으로 맞추지 않는다(팀 합의 없이).
+- 관계·ERD 참고: `database/ERD.md` (기준은 `schema.prisma` + migrations).
+
+## 팀 코드·설정
+
+- 서버에서 PlayProve 고정 팀 코드가 필요하면 **`@/lib/config`의 `getPlayproveTeamCode()` / `hasPlayproveTeamCode()`** 만 사용. `process.env.NEXT_PUBLIC_*`를 라우트 파일에 직접 반복하지 않는다.
+- 팀 단위 조회는 **`getTeamByRosterCode`** 등 기존 `src/lib/server/*` 패턴을 재사용한다.
+
+## 인증·미들웨어
+
+- 보호 API는 **`src/middleware.ts`의 `matcher`**에 경로가 포함되는지 확인한다. 새 보호 라우트를 추가하면 **matcher 누락이 곧 보안 버그**다.
+- `/api/auth/*`는 미들웨어에서 예외 처리된다. 새 인증 엔드포인트는 이 규칙과 충돌하지 않게 둔다.
+- 데모 세션: 쿠키 **`pp_demo_uid`**. 허용 사용자는 **`@/lib/auth/allowedAppUsers`**와 맞춘다.
+- 팀·역할이 필요한 핸들러에서는 가능하면 **`requireDemoCookie`**, **`requireTeamFromCode`**, **`getTeamMember`** 등 **`src/lib/server/demoTeamApiAuth.ts`**의 헬퍼를 사용한다. 동일 로직을 라우트에 복붙하지 않는다.
+- 출결·일정 등 **역할 기반** 분기는 `canEditAttendance`, `canWriteCoachPlan`, `requireTeamManager` 등 **기존 함수를 확장**하는 형태를 우선한다.
+
+## Route Handler 관행
+
+- DB·쿠키·요청 헤더에 의존하는 API에는 **`export const dynamic = "force-dynamic"`**을 둔다(기존 라우트와 동일).
+- 응답은 **`NextResponse.json`**, 에러 시 **`{ error: string, message?: string }`** 형태와 **적절한 HTTP 상태**를 유지한다. 클라이언트가 쓰는 `error` 코드 문자열은 함부로 바꾸지 않는다(변경 시 프론트·문서 함께 수정).
+- **입력 검증**: UUID·enum·본문 JSON은 파싱 실패 시 400, 존재하지 않으면 404, 권한 없으면 403을 구분한다.
+- Prisma 결과를 API 스펙에 맞게보낼 때는 **`src/lib/mappers/*`**에 두거나 기존 매퍼를 확장한다. 핸들러 안에서 거대한 변환 로직을 쌓지 않는다.
+
+## 스키마 드리프트·내결함성
+
+- 선택적 테이블/마이그레이션 순서 문제는 **`team/events`의 `event_coach_plans` 폴백**처럼, **명시적 폴백 + 로그/플래그**가 있을 때만 허용한다. 조용히 삼키지 않는다.
+
+## 문서
+
+- 구조·갭 요약: `docs/backend-code-review-report.md`
+- 프론트와 공유하는 실행계획: `docs/frontend-refactor-execution-plan.md` (API 계약을 바꿀 때는 양쪽 고려)
+- **새 엔드포인트**를 추가하면 `docs/`에 **한 줄이라도** (경로·메서드·인증·주요 query) 남기거나, 기존 API 개요 문서를 갱신한다.
+
+## 하지 않을 것 (기본)
+
+- 라우트 핸들러에서 장기 블로킹·무제한 N+1 쿼리(필요 시 `select`/`include` 최소화).
+- 인증 생략된 새 `/api/*` 경로.
+- 프로덕션 비밀키를 코드·커밋에 넣기.

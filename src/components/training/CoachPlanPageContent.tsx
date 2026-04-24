@@ -10,11 +10,12 @@ import {
   coachPlanStatusLabel,
   type CoachPlanUnit,
 } from "@/lib/team/coachPlanMetadata";
+import { getPlayproveTeamCode, hasPlayproveTeamCode } from "@/lib/config";
 import { canConfirmCoachPlanRole, canWriteCoachPlanRole } from "@/lib/team/coachPlanClient";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const COACH_PLAN_DB_TEAM_CODE = process.env.NEXT_PUBLIC_PLAYPROVE_TEAM_CODE?.trim() ?? "";
+const teamCode = getPlayproveTeamCode();
 
 type DraftForm = {
   unit: CoachPlanUnit;
@@ -104,7 +105,7 @@ export function CoachPlanPageContent({
   }, []);
 
   const load = useCallback(async () => {
-    if (!COACH_PLAN_DB_TEAM_CODE) {
+    if (!hasPlayproveTeamCode()) {
       setLoading(false);
       return;
     }
@@ -112,7 +113,7 @@ export function CoachPlanPageContent({
     setErr(null);
     try {
       const res = await fetch(
-        `/api/team/events?teamCode=${encodeURIComponent(COACH_PLAN_DB_TEAM_CODE)}&expand=coach_plans`,
+        `/api/team/events?teamCode=${encodeURIComponent(teamCode)}&expand=coach_plans`,
         { credentials: "include", cache: "no-store" },
       );
       const j = (await res.json().catch(() => ({}))) as {
@@ -137,7 +138,7 @@ export function CoachPlanPageContent({
   }, [load]);
 
   useEffect(() => {
-    if (!COACH_PLAN_DB_TEAM_CODE || !allowWrite) {
+    if (!hasPlayproveTeamCode() || !allowWrite) {
       setRoleTitleHint(undefined);
       return;
     }
@@ -145,7 +146,7 @@ export function CoachPlanPageContent({
     void (async () => {
       try {
         const res = await fetch(
-          `/api/team/me/coach-context?teamCode=${encodeURIComponent(COACH_PLAN_DB_TEAM_CODE)}`,
+          `/api/team/me/coach-context?teamCode=${encodeURIComponent(teamCode)}`,
           { credentials: "include", cache: "no-store" },
         );
         const j = (await res.json().catch(() => ({}))) as { role_title_hint?: string };
@@ -186,7 +187,7 @@ export function CoachPlanPageContent({
 
   const patchPlan = async (eventId: string, planId: string, body: Record<string, unknown>) => {
     const res = await fetch(
-      `/api/team/events/${encodeURIComponent(eventId)}/coach-plans/${encodeURIComponent(planId)}?teamCode=${encodeURIComponent(COACH_PLAN_DB_TEAM_CODE)}`,
+      `/api/team/events/${encodeURIComponent(eventId)}/coach-plans/${encodeURIComponent(planId)}?teamCode=${encodeURIComponent(teamCode)}`,
       {
         method: "PATCH",
         credentials: "include",
@@ -219,7 +220,7 @@ export function CoachPlanPageContent({
     setSavingEventId(eventId);
     try {
       const res = await fetch(
-        `/api/team/events/${encodeURIComponent(eventId)}/coach-plans?teamCode=${encodeURIComponent(COACH_PLAN_DB_TEAM_CODE)}`,
+        `/api/team/events/${encodeURIComponent(eventId)}/coach-plans?teamCode=${encodeURIComponent(teamCode)}`,
         {
           method: "POST",
           credentials: "include",
@@ -254,7 +255,7 @@ export function CoachPlanPageContent({
   const deletePlan = async (eventId: string, planId: string) => {
     if (!confirm("이 세부 계획을 삭제할까요?")) return;
     const res = await fetch(
-      `/api/team/events/${encodeURIComponent(eventId)}/coach-plans/${encodeURIComponent(planId)}?teamCode=${encodeURIComponent(COACH_PLAN_DB_TEAM_CODE)}`,
+      `/api/team/events/${encodeURIComponent(eventId)}/coach-plans/${encodeURIComponent(planId)}?teamCode=${encodeURIComponent(teamCode)}`,
       { method: "DELETE", credentials: "include" },
     );
     const j = (await res.json().catch(() => ({}))) as ApiErrorBody;
@@ -265,7 +266,7 @@ export function CoachPlanPageContent({
     await load();
   };
 
-  if (!COACH_PLAN_DB_TEAM_CODE) {
+  if (!teamCode) {
     return (
       <div className="empty-state">
         이 화면은 DB 연동 모드에서만 사용할 수 있습니다.{" "}
@@ -396,7 +397,7 @@ export function CoachPlanPageContent({
             <EventAggregateBoard
               key={selectedTrainingEvent.id}
               ev={selectedTrainingEvent}
-              teamCode={COACH_PLAN_DB_TEAM_CODE}
+              teamCode={teamCode}
               showManagerDelete={showManagerDeleteOnBoard}
               canConfirm={canConfirm}
               userId={userId}

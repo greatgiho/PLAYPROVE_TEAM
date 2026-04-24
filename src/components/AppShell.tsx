@@ -44,6 +44,12 @@ function filterNav(items: NavItem[], teamRole: import("@/lib/types/roles").TeamR
   return items.filter((it) => canAccessPage(teamRole, viewMode, it.id));
 }
 
+function viewModeBadgeClass(mode: ViewMode): string {
+  if (mode === "coach") return "bg-blue-100 text-blue-800";
+  if (mode === "player") return "bg-emerald-100 text-emerald-800";
+  return "bg-red-100 text-[#5a1010]";
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { session, logout, setViewMode } = useSession();
@@ -71,66 +77,95 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [...MANAGEMENT, ...COACHING, ...MYSPACE, ...MANAGER].find((n) => pathname.startsWith(n.href))?.label ??
     "PlayProve";
 
+  const navLinkClass = (href: string) => {
+    const active = pathname.startsWith(href);
+    return [
+      "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors",
+      active
+        ? "bg-white font-bold text-[#5a1010] shadow-sm"
+        : "text-white/65 hover:bg-white/10 hover:text-white",
+    ].join(" ");
+  };
+
   return (
-    <div id="screen-app" className="screen active" style={{ display: "flex", width: "100%", minHeight: "100vh" }}>
-      <aside className={`sidebar${sidebarOpen ? " open" : ""}`} id="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-wrap">
-            <div className="logo-icon">p</div>
-            <div className="logo-text">
-              <span className="logo-brand">play</span>
-              <span className="logo-brand2">prove</span>
-              <span className="logo-sub">Next.js App Router</span>
+    <div className="flex min-h-screen w-full bg-[#f9f9f9] text-neutral-900">
+      {/* 모바일 오버레이 */}
+      <div
+        role="presentation"
+        aria-hidden={!sidebarOpen}
+        className={`fixed inset-0 z-[150] bg-black/45 transition-opacity md:hidden ${
+          sidebarOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={closeSidebar}
+      />
+
+      <aside
+        className={[
+          "fixed left-0 top-0 z-[200] flex h-screen w-[260px] flex-col bg-[#5a1010] text-white shadow-lg",
+          "transition-transform duration-[220ms] ease-out md:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        ].join(" ")}
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-5 pb-4 pt-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white font-['Bebas_Neue',sans-serif] text-[22px] font-black leading-none text-[#5a1010]">
+              p
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-[17px] font-extrabold tracking-tight text-white">play</span>
+              <span className="-mt-0.5 text-[17px] font-extrabold tracking-tight text-[#e8a0a0]">prove</span>
+              <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-white/55">Next.js App Router</span>
             </div>
           </div>
-          <button type="button" className="sidebar-close" id="sidebarClose" aria-label="메뉴 닫기" onClick={closeSidebar}>
-            <i className="fas fa-times"></i>
+          <button
+            type="button"
+            className="rounded p-1 text-lg text-white/60 hover:text-white md:hidden"
+            aria-label="메뉴 닫기"
+            onClick={closeSidebar}
+          >
+            <i className="fas fa-times" />
           </button>
         </div>
 
-        <div className="view-switcher" id="viewSwitcher">
+        <div className="mx-3.5 mt-2.5 mb-1 flex flex-row gap-0.5 rounded-lg bg-black/25 p-1">
           {modes.map((m) => (
             <button
               key={m}
               type="button"
-              className={`view-btn ${viewMode === m ? "active" : ""}`}
-              data-view={m}
+              className={[
+                "flex flex-1 flex-row items-center justify-center gap-1 rounded-md border-0 px-1 py-1.5 text-[11px] font-bold transition-colors",
+                viewMode === m ? "bg-white text-[#5a1010] shadow-sm" : "bg-transparent text-white/50 hover:text-white/80",
+              ].join(" ")}
               onClick={() => {
                 setViewMode(m);
                 closeSidebar();
               }}
             >
-              <i className={`fas ${m === "manager" ? "fa-shield-alt" : m === "coach" ? "fa-chalkboard-teacher" : "fa-running"}`}></i>{" "}
+              <i
+                className={`fas ${m === "manager" ? "fa-shield-alt" : m === "coach" ? "fa-chalkboard-teacher" : "fa-running"}`}
+              />{" "}
               {viewModeLabel(m)}
             </button>
           ))}
         </div>
 
-        <div className="sidebar-team" id="sidebarTeam">
-          <div className="team-badge">🏈</div>
+        <div className="mx-4 mb-2 mt-4 flex items-center gap-2.5 rounded-lg bg-white/10 px-3.5 py-3">
+          <span className="text-2xl">🏈</span>
           <div>
-            <div className="team-name">{session.teamName}</div>
-            <div className="team-season">2026 시즌</div>
+            <div className="text-sm font-bold text-white">{session.teamName}</div>
+            <div className="mt-0.5 text-[11px] text-white/50">2026 시즌</div>
           </div>
         </div>
 
-        <div className="sidebar-scroll">
-          <div className="sidebar-section-label">역할</div>
-          <div style={{ padding: "0 14px 10px", fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.75)" }}>
-            {teamRoleLabel(teamRole)}
-          </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 [scrollbar-width:thin]">
+          <div className="px-3 pb-2 pt-1 text-[10px] font-extrabold uppercase tracking-wide text-white/45">역할</div>
+          <div className="px-3.5 pb-2.5 text-xs font-extrabold text-white/75">{teamRoleLabel(teamRole)}</div>
 
-          <div className="sidebar-section-label">MANAGEMENT</div>
-          <nav className="sidebar-nav">
+          <div className="px-3 pb-2 pt-2 text-[10px] font-extrabold uppercase tracking-wide text-white/45">MANAGEMENT</div>
+          <nav className="flex flex-col gap-0.5 px-3 py-1">
             {management.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                className={`nav-item ${pathname.startsWith(it.href) ? "active" : ""}`}
-                data-page={it.id}
-                onClick={closeSidebar}
-              >
-                <i className={`fas ${it.icon}`}></i>
+              <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
+                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
                 <span>{it.label}</span>
                 {it.tag ? (
                   <span className={it.tag === "MGR" ? "nav-tag-admin" : "nav-badge-new"}>{it.tag}</span>
@@ -139,19 +174,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          <div className="sidebar-section-label" style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 12 }}>
+          <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
             COACHING
           </div>
-          <nav className="sidebar-nav">
+          <nav className="flex flex-col gap-0.5 px-3 py-1">
             {coaching.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                className={`nav-item ${pathname.startsWith(it.href) ? "active" : ""}`}
-                data-page={it.id}
-                onClick={closeSidebar}
-              >
-                <i className={`fas ${it.icon}`}></i>
+              <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
+                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
                 <span>{it.label}</span>
                 {it.tag ? <span className="nav-badge-new">{it.tag}</span> : null}
               </Link>
@@ -160,22 +189,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {managerOnly.length ? (
             <>
-              <div
-                className="sidebar-section-label"
-                style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 12 }}
-              >
+              <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
                 MANAGER
               </div>
-              <nav className="sidebar-nav">
+              <nav className="flex flex-col gap-0.5 px-3 py-1">
                 {managerOnly.map((it) => (
-                  <Link
-                    key={it.href}
-                    href={it.href}
-                    className={`nav-item ${pathname.startsWith(it.href) ? "active" : ""}`}
-                    data-page={it.id}
-                    onClick={closeSidebar}
-                  >
-                    <i className={`fas ${it.icon}`}></i>
+                  <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
+                    <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
                     <span>{it.label}</span>
                   </Link>
                 ))}
@@ -183,19 +203,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </>
           ) : null}
 
-          <div className="sidebar-section-label" style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 12 }}>
+          <div className="mt-2.5 border-t border-white/10 px-3 pb-2 pt-3 text-[10px] font-extrabold uppercase tracking-wide text-white/45">
             MY SPACE
           </div>
-          <nav className="sidebar-nav">
+          <nav className="flex flex-col gap-0.5 px-3 py-1">
             {myspace.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                className={`nav-item ${pathname.startsWith(it.href) ? "active" : ""}`}
-                data-page={it.id}
-                onClick={closeSidebar}
-              >
-                <i className={`fas ${it.icon}`}></i>
+              <Link key={it.href} href={it.href} className={navLinkClass(it.href)} onClick={closeSidebar}>
+                <i className={`fas ${it.icon} w-[18px] text-center text-[15px]`} />
                 <span>{it.label}</span>
                 {it.tag ? <span className="nav-badge-new">{it.tag}</span> : null}
               </Link>
@@ -203,59 +217,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        <div className="sidebar-footer">
+        <div className="border-t border-white/10 px-4 py-4">
           <button
             type="button"
             onClick={() => logout()}
-            style={{
-              width: "100%",
-              padding: 8,
-              background: "rgba(255,255,255,.08)",
-              border: "1px solid rgba(255,255,255,.15)",
-              color: "rgba(255,255,255,.7)",
-              borderRadius: 6,
-              fontSize: 11,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: "Inter, sans-serif",
-            }}
+            className="w-full cursor-pointer rounded-md border border-white/15 bg-white/[0.08] py-2 text-[11px] font-bold text-white/70 transition hover:bg-white/15"
           >
-            <i className="fas fa-sign-out-alt"></i> 로그아웃
+            <i className="fas fa-sign-out-alt" /> 로그아웃
           </button>
-          <div className="user-info" style={{ marginTop: 10 }}>
-            <div className="user-avatar">{session.displayName.slice(-2)}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="user-name">{session.displayName}</div>
-              <div className="user-role">{session.email}</div>
+          <div className="mt-2.5 flex items-center gap-2.5">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#e8a0a0] text-xs font-extrabold text-[#5a1010]">
+              {session.displayName.slice(-2)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-semibold text-white">{session.displayName}</div>
+              <div className="truncate text-[11px] text-white/50">{session.email}</div>
             </div>
           </div>
         </div>
       </aside>
 
-      <div
-        className={`overlay${sidebarOpen ? " show" : ""}`}
-        id="overlay"
-        role="presentation"
-        aria-hidden={!sidebarOpen}
-        onClick={closeSidebar}
-      />
-
-      <div className="main-wrap" id="mainWrap" style={{ flex: 1, minWidth: 0 }}>
-        <header className="topbar">
-          <button type="button" className="menu-btn" id="menuBtn" aria-label="메뉴 열기" onClick={openSidebar}>
-            <i className="fas fa-bars"></i>
+      <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col md:pl-[260px]">
+        <header className="sticky top-0 z-[100] flex h-[60px] w-full flex-shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-3 shadow-[0_2px_12px_rgba(0,0,0,0.08)] sm:gap-4 sm:px-5 md:px-7">
+          <button
+            type="button"
+            className="rounded p-1 text-xl text-neutral-700 hover:bg-neutral-100 md:hidden"
+            aria-label="메뉴 열기"
+            onClick={openSidebar}
+          >
+            <i className="fas fa-bars" />
           </button>
-          <div className="topbar-title">{pageTitle}</div>
-          <div className="topbar-right">
-            <div className="view-mode-badge" id="viewModeBadge">
-              <i className="fas fa-shield-alt"></i> <span id="viewModeLabel">{viewModeLabel(viewMode)}</span>
+          <div className="min-w-0 flex-1 truncate text-[15px] font-extrabold tracking-tight text-neutral-900 sm:text-[17px] md:text-lg">
+            {pageTitle}
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <div
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${viewModeBadgeClass(viewMode)}`}
+            >
+              <i className="fas fa-shield-alt" /> <span>{viewModeLabel(viewMode)}</span>
             </div>
-            <span className="date-badge" id="todayDate">
+            <span className="hidden rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-[#7B1818] sm:inline">
               {new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
             </span>
           </div>
         </header>
-        <main className="page-content next-page-root" role="main">
+        <main
+          className="next-page-root w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-5 sm:py-5 md:px-8 md:py-7 lg:px-10"
+          role="main"
+        >
           {children}
         </main>
       </div>

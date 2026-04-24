@@ -1,4 +1,5 @@
 import { isAllowedAppUserId } from "@/lib/auth/allowedAppUsers";
+import { getPlayproveTeamCode } from "@/lib/config";
 import {
   coachHeroSummary,
   staffDbSections,
@@ -38,7 +39,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const teamCode = process.env.NEXT_PUBLIC_PLAYPROVE_TEAM_CODE?.trim();
+  const teamCode = getPlayproveTeamCode();
   if (!teamCode) {
     return NextResponse.json({ error: "team_code_not_configured" }, { status: 503 });
   }

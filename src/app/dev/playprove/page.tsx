@@ -6,11 +6,19 @@ import {
   PlayproveMobileOnboardingScreen,
   PlayproveSplitLoginScreen,
 } from "@/components/playprove";
+import { Card } from "@/components/ui";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
 type Tab = "mobile" | "login" | "desktop";
+
+function tabLinkClass(active: boolean): string {
+  return [
+    "rounded-full px-3.5 py-2 text-[13px] font-semibold no-underline",
+    active ? "bg-[#70201f] text-white" : "bg-neutral-200 text-neutral-800",
+  ].join(" ");
+}
 
 function PlayprovePreviewInner() {
   const searchParams = useSearchParams();
@@ -21,70 +29,31 @@ function PlayprovePreviewInner() {
   }, [searchParams]);
 
   return (
-    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
-      <header
-        style={{
-          padding: "12px 16px",
-          borderBottom: "1px solid #e5e5e5",
-          background: "#fff",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
+    <div className="flex min-h-[100dvh] flex-col bg-app-surface-muted">
+      <Card
+        className="rounded-none border-x-0 border-t-0 border-b-app-border shadow-none rounded-b-app"
+        padded
       >
-        <strong style={{ fontSize: 14 }}>Playprove UI preview</strong>
-        <nav style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link
-            href="/dev/playprove?tab=mobile"
-            style={{
-              padding: "8px 14px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-              background: tab === "mobile" ? "#70201f" : "#f0f0f0",
-              color: tab === "mobile" ? "#fff" : "#333",
-            }}
-          >
-            Mobile onboarding
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <strong className="text-sm font-extrabold text-app-text">Playprove UI preview</strong>
+          <nav className="flex flex-wrap gap-2">
+            <Link href="/dev/playprove?tab=mobile" className={tabLinkClass(tab === "mobile")}>
+              Mobile onboarding
+            </Link>
+            <Link href="/dev/playprove?tab=login" className={tabLinkClass(tab === "login")}>
+              Split login
+            </Link>
+            <Link href="/dev/playprove?tab=desktop" className={tabLinkClass(tab === "desktop")}>
+              Desktop setup
+            </Link>
+          </nav>
+          <Link href="/" className="text-[13px] text-app-text-muted">
+            ← Home
           </Link>
-          <Link
-            href="/dev/playprove?tab=login"
-            style={{
-              padding: "8px 14px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-              background: tab === "login" ? "#70201f" : "#f0f0f0",
-              color: tab === "login" ? "#fff" : "#333",
-            }}
-          >
-            Split login
-          </Link>
-          <Link
-            href="/dev/playprove?tab=desktop"
-            style={{
-              padding: "8px 14px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-              background: tab === "desktop" ? "#70201f" : "#f0f0f0",
-              color: tab === "desktop" ? "#fff" : "#333",
-            }}
-          >
-            Desktop setup
-          </Link>
-        </nav>
-        <Link href="/" style={{ fontSize: 13, color: "#666" }}>
-          ← Home
-        </Link>
-      </header>
+        </div>
+      </Card>
 
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div className="min-h-0 flex-1">
         {tab === "mobile" && (
           <PlayproveMobileOnboardingScreen
             slides={PLAYPROVE_PATH_SLIDES_GROWTH_MALE}
@@ -109,7 +78,7 @@ export default function PlayprovePreviewPage() {
   return (
     <Suspense
       fallback={
-        <div style={{ padding: 24, fontFamily: "Inter, sans-serif" }}>Loading preview…</div>
+        <div className="p-6 font-sans text-app-text-muted">Loading preview…</div>
       }
     >
       <PlayprovePreviewInner />

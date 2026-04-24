@@ -1,0 +1,22 @@
+---
+description: PlayProve 프론트 스타일 (Tailwind·토큰·레거시 CSS)
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# 프론트 스타일 규칙
+
+## 우선순위
+
+1. **새·수정 UI**: **Tailwind 유틸**로 레이아웃·간격·타이포 (`className`).
+2. **색·반경·그림자**: **`theme.extend`에 매핑된 `app` 색상** 또는 CSS 변수 `var(--app-*)` 사용 (`src/styles/app-tokens.css`).
+3. 전역 스타일: `globals.css`는 **`legacy-components-trimmed.css`**(쉘 제외 프리미티브) + **`legacy-css/style_v2.css`** + **`auth.css`** 만 import. 원본 `legacy-css/style.css` 전체를 다시 통째 import하지 않음. `legacy-components-trimmed` 재생성 시 위 파일 주석의 sed 절차를 따름.
+
+## 금지·주의
+
+- `preflight`는 꺼진 상태 유지(`tailwind.config.ts`). 켜기는 팀 합의 + 회귀 검증 후 별 작업.
+- 같은 요소에 **인라인 `style={{}}`와 Tailwind를 중복**으로 쌓지 않기. 리팩터 시에는 한쪽으로 통일.
+
+## 디자이너 협용
+
+- Figma 토큰 추가 시: **토큰 파일 + `tailwind.config.ts` `theme.extend`** 둘 다 갱신하거나, 문서 `docs/frontend-refactor-execution-plan.md`에 매핑 한 줄 기록.
