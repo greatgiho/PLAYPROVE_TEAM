@@ -114,6 +114,7 @@ erDiagram
     uuid player_id FK
     uuid coach_user_id FK
     uuid source_event_id FK
+    uuid video_archive_id FK
   }
 
   iip_assignments {
@@ -140,6 +141,24 @@ erDiagram
     date practice_date
   }
 
+  video_archives {
+    uuid id PK
+    uuid team_id FK
+    uuid event_id FK
+    text title
+    text source_type
+    text source_url
+  }
+
+  video_feedbacks {
+    uuid id PK
+    uuid video_archive_id FK
+    int timestamp_seconds
+    text content
+    uuid author_user_id FK
+    uuid tagged_player_id FK
+  }
+
   AUTH_USERS ||--o| profiles : "id"
   AUTH_USERS ||--o{ team_members : "user_id"
   AUTH_USERS ||--o{ join_requests : "user_id"
@@ -152,6 +171,7 @@ erDiagram
   AUTH_USERS ||--o{ iip_assignments : "coach_user_id"
   AUTH_USERS ||--o{ practice_checkins : "coach_user_id"
   AUTH_USERS ||--o{ event_coach_plans : "coach_user_id"
+  AUTH_USERS ||--o{ video_feedbacks : "author_user_id"
 
   teams ||--o{ players : "team_id"
   teams ||--o{ team_members : "team_id"
@@ -167,6 +187,7 @@ erDiagram
   teams ||--o{ iip_assignments : "team_id"
   teams ||--o{ condition_logs : "team_id"
   teams ||--o{ practice_checkins : "team_id"
+  teams ||--o{ video_archives : "team_id"
 
   players ||--o{ team_members : "player_id"
   players ||--o{ attendance : "player_id"
@@ -176,11 +197,16 @@ erDiagram
   players ||--o{ iip_assignments : "player_id"
   players ||--o{ condition_logs : "player_id"
   players ||--o{ practice_checkins : "player_id"
+  players ||--o{ video_feedbacks : "tagged_player_id"
 
   events ||--o{ attendance : "event_id"
   events ||--o{ event_coach_plans : "event_id"
   events ||--o{ performance_scores : "source_event_id"
   events ||--o{ practice_checkins : "event_id"
+  events ||--o{ video_archives : "event_id"
+
+  video_archives ||--o{ video_feedbacks : "video_archive_id"
+  video_archives ||--o{ performance_scores : "video_archive_id"
 
   training_schedules ||--o{ training_blocks : "training_schedule_id"
   training_blocks ||--o{ training_blocks : "parent_block_id"
@@ -242,6 +268,8 @@ flowchart TB
     PS[performance_scores]
     IIP[iip_assignments]
     PC[practice_checkins]
+    VA[video_archives]
+    VF[video_feedbacks]
     T --> TS
     TS --> TB
     TB --> TB
@@ -255,6 +283,12 @@ flowchart TB
     PL --> PC
     EV --> PC
     T --> PC
+    T --> VA
+    EV --> VA
+    VA --> VF
+    PL --> VF
+    AU -.->|feedback author| VF
+    VA --- PS
   end
 
   subgraph WELL["웰니스 P-03"]
@@ -272,6 +306,6 @@ flowchart TB
 | 멤버십·가입 | `join_requests`, `team_members`, `players` |
 | 운영 | `events`, `event_coach_plans`, `attendance`, `monthly_dues`, `injury_reports` |
 | 훈련 | `training_schedules`, `training_blocks` |
-| 코칭·자동화 | `drill_library`, `performance_scores`, `iip_assignments` |
+| 코칭·자동화 | `drill_library`, `performance_scores`, `iip_assignments`, `video_archives`, `video_feedbacks` |
 | 즉시평가 | `practice_checkins` |
 | 컨디션 | `condition_logs` |

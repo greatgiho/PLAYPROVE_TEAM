@@ -21,6 +21,10 @@ export function apiErrorUserHint(status: number, body: ApiErrorBody | null | und
     return "DB 스키마가 앱보다 낮습니다. Supabase에 Prisma 마이그레이션을 적용한 뒤(npx prisma migrate deploy) 다시 시도하세요.";
   }
 
+  if (status === 503 && code === "database_unavailable") {
+    return "DB에 연결되지 않았습니다. .env의 DATABASE_URL, Supabase 프로젝트·네트워크·방화벽을 확인하세요. Prisma/서버 로그의 P1001·P1000 메시지를 함께 보세요.";
+  }
+
   if (status === 503 && code === "team_code_not_configured") {
     return "서버에 팀 코드가 없습니다. .env 의 NEXT_PUBLIC_PLAYPROVE_TEAM_CODE(예: seoul_dragons_fc)를 넣고 서버를 재시작하세요.";
   }
@@ -56,7 +60,7 @@ export function apiErrorUserHint(status: number, body: ApiErrorBody | null | und
 
   if (status >= 500) {
     const base = serverMsg || code || `HTTP ${status}`;
-    return `서버 오류: ${base}. Supabase 연결·마이그레이션·Prisma 로그를 확인하세요.`;
+    return `서버 오류: ${base}. Supabase 연결·마이그레이션(npx prisma migrate deploy)·Prisma/서버 로그를 확인하세요.`;
   }
 
   if (serverMsg) return serverMsg;

@@ -29,6 +29,7 @@ const COACHING: NavItem[] = [
   { id: "ai_tactical", href: "/app/ai_tactical", label: "AI 전술 어시스턴트", icon: "fa-robot", tag: "v3" },
   { id: "growth", href: "/app/growth", label: "성장 속도 분석", icon: "fa-chart-line", tag: "v3" },
   { id: "coach_plan", href: "/app/coach_plan", label: "훈련계획 작성", icon: "fa-pencil-ruler", tag: "v3" },
+  { id: "video_review", href: "/app/video_review", label: "영상 리뷰", icon: "fa-film", tag: "v3" },
 ];
 
 const MYSPACE: NavItem[] = [

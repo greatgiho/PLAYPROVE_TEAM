@@ -7,7 +7,8 @@ import {
   type PlayerGrade,
   type PlayerGradeResult,
 } from "@/lib/mypage/calcPlayerGrade";
-import { RosterFace } from "@/components/roster/RosterFace";
+import { MypageCollapsibleSection } from "@/components/mypage/MypageCollapsibleSection";
+import { MypageHeroAvatar } from "@/components/mypage/MypageHeroAvatar";
 import type { AttendanceRecord, InjuryReport, MonthlyDue, Player, TeamEvent } from "@/lib/types/entities";
 import Link from "next/link";
 import { Fragment, useMemo } from "react";
@@ -50,6 +51,7 @@ type Props = {
   rosterAvatarUrl?: string | null;
   /** DB 프로필 — 개인용 */
   personalAvatarUrl?: string | null;
+  onEditPhoto?: () => void;
 };
 
 export function MypagePlayerDashboard({
@@ -60,6 +62,7 @@ export function MypagePlayerDashboard({
   injuries,
   rosterAvatarUrl = null,
   personalAvatarUrl = null,
+  onEditPhoto,
 }: Props) {
   const gradeData: PlayerGradeResult = useMemo(
     () => calcPlayerGrade(player.id, { attendance, events, dues, injuries, conditionLogs: [] }),
@@ -116,30 +119,13 @@ export function MypagePlayerDashboard({
     <>
       <div className="mypage-hero">
         <div className="mypage-hero-content">
-          <div className="mypage-avatar" style={{ padding: 0, overflow: "visible", background: "transparent" }}>
-            <div style={{ position: "relative", width: 88, height: 88 }}>
-              <RosterFace name={player.full_name} photoUrl={mainHeroPhoto} size={88} />
-              {showPersonalBadge ? (
-                <img
-                  src={personalAvatarUrl ?? player.personal_avatar_url ?? ""}
-                  alt=""
-                  width={40}
-                  height={40}
-                  style={{
-                    position: "absolute",
-                    right: -4,
-                    bottom: -4,
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "3px solid rgba(255,255,255,0.95)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                  }}
-                />
-              ) : null}
-            </div>
-          </div>
+          <MypageHeroAvatar
+            name={player.full_name}
+            mainPhotoUrl={mainHeroPhoto}
+            personalPhotoUrl={personalAvatarUrl ?? player.personal_avatar_url ?? null}
+            showPersonalBadge={showPersonalBadge}
+            onEditPhoto={onEditPhoto}
+          />
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <div className="mypage-name">{player.full_name}</div>
@@ -231,7 +217,8 @@ export function MypagePlayerDashboard({
         </div>
       </div>
 
-      <div className="grid-2 mb-24">
+      <MypageCollapsibleSection title="등급·컨디션" subtitle="포인트·등급 진행도" defaultOpen={false}>
+      <div className="grid-2 mb-24" style={{ marginBottom: 0 }}>
         <div className="condition-chart-wrap">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
@@ -341,8 +328,10 @@ export function MypagePlayerDashboard({
           </div>
         </div>
       </div>
+      </MypageCollapsibleSection>
 
-      <div className="grid-2 mb-24">
+      <MypageCollapsibleSection title="출석·건강" subtitle="출석 히스토리·부상 현황" defaultOpen={false}>
+      <div className="grid-2 mb-24" style={{ marginBottom: 0 }}>
         <div className="card">
           <div className="card-header">
             <div className="card-title">
@@ -456,6 +445,7 @@ export function MypagePlayerDashboard({
           </div>
         </div>
       </div>
+      </MypageCollapsibleSection>
     </>
   );
 }

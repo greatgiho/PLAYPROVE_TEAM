@@ -1,14 +1,51 @@
 "use client";
 
-import { ProfileAvatarSlots } from "@/components/mypage/ProfileAvatarSlots";
 import { MypagePlayerDashboard } from "@/components/mypage/MypagePlayerDashboard";
 import { MypageStaffDashboard } from "@/components/mypage/MypageStaffDashboard";
+import { ProfileAvatarModal } from "@/components/mypage/ProfileAvatarModal";
+import type { ProfileAvatarPayload } from "@/components/mypage/profileAvatarTypes";
 import { teamRoleLabel, viewModeLabel } from "@/lib/types/roles";
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { useMypagePageState } from "./useMypagePageState";
 
 export function MypagePageView() {
   const s = useMypagePageState();
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+
+  const canEditPhotos = Boolean(s.teamCode && s.session?.userId && s.profilePhotos);
+  const openAvatarModal = useCallback(() => {
+    if (canEditPhotos) setAvatarModalOpen(true);
+  }, [canEditPhotos]);
+
+  const handlePhotosUpdated = useCallback((next: ProfileAvatarPayload) => {
+    s.setProfilePhotos(next);
+    s.setStaffReloadToken((n) => n + 1);
+  }, [s.setProfilePhotos, s.setStaffReloadToken]);
+
+  const profileBanner =
+    s.teamCode && s.session?.userId && s.profileFetchState !== "ok" ? (
+      s.profileFetchState === "loading" ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 16, color: "var(--gray-600)", fontSize: 14 }}>
+            프로필 정보를 불러오는 중…
+          </div>
+        </div>
+      ) : s.profileFetchState === "missing" ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body" style={{ padding: 16, fontSize: 14, color: "var(--gray-700)" }}>
+            DB에 해당 사용자의 <code>profiles</code> 행이 없습니다.{" "}
+            <code style={{ fontSize: 12 }}>npx prisma db seed</code> 후 다시 시도해 주세요.
+          </div>
+        </div>
+      ) : s.profileFetchState === "error" && s.profileErrorHint ? (
+        <div className="card" style={{ marginBottom: 16, borderColor: "rgba(180, 35, 24, 0.35)" }}>
+          <div className="card-body" style={{ padding: 16, fontSize: 14, color: "var(--gray-800)", lineHeight: 1.65 }}>
+            <strong style={{ color: "var(--danger, #b42318)" }}>프로필 API</strong> — {s.profileErrorHint}
+          </div>
+        </div>
+      ) : null
+    ) : null;
 
   return (
     <>
@@ -18,33 +55,16 @@ export function MypagePageView() {
         </div>
       </div>
 
-      {s.teamCode && s.session?.userId ? (
-        s.profileFetchState === "loading" ? (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-body" style={{ padding: 16, color: "var(--gray-600)", fontSize: 14 }}>
-              프로필 정보를 불러오는 중…
-            </div>
-          </div>
-        ) : s.profileFetchState === "missing" ? (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-body" style={{ padding: 16, fontSize: 14, color: "var(--gray-700)" }}>
-              DB에 해당 사용자의 <code>profiles</code> 행이 없습니다.{" "}
-              <code style={{ fontSize: 12 }}>npx prisma db seed</code> 후 다시 시도해 주세요.
-            </div>
-          </div>
-        ) : s.profileFetchState === "error" && s.profileErrorHint ? (
-          <div className="card" style={{ marginBottom: 16, borderColor: "rgba(180, 35, 24, 0.35)" }}>
-            <div className="card-body" style={{ padding: 16, fontSize: 14, color: "var(--gray-800)", lineHeight: 1.65 }}>
-              <strong style={{ color: "var(--danger, #b42318)" }}>프로필 API</strong> — {s.profileErrorHint}
-            </div>
-          </div>
-        ) : s.profilePhotos ? (
-          <ProfileAvatarSlots
-            userId={s.session.userId}
-            initial={s.profilePhotos}
-            onUpdated={s.setProfilePhotos}
-          />
-        ) : null
+      {profileBanner}
+
+      {canEditPhotos && s.session?.userId && s.profilePhotos ? (
+        <ProfileAvatarModal
+          isOpen={avatarModalOpen}
+          onClose={() => setAvatarModalOpen(false)}
+          userId={s.session.userId}
+          initial={s.profilePhotos}
+          onUpdated={handlePhotosUpdated}
+        />
       ) : null}
 
       {s.showStaffDash && !s.teamCode ? (
@@ -79,6 +99,8 @@ export function MypagePageView() {
         ) : s.staffContext ? (
           <MypageStaffDashboard
             context={s.staffContext}
+            profilePhotos={s.profilePhotos}
+            onEditPhoto={canEditPhotos ? openAvatarModal : undefined}
             onReload={() => {
               s.setStaffReloadToken((n) => n + 1);
             }}
@@ -105,6 +127,7 @@ export function MypagePageView() {
             injuries={s.injuries}
             rosterAvatarUrl={s.profilePhotos?.avatarUrl ?? null}
             personalAvatarUrl={s.profilePhotos?.personalAvatarUrl ?? null}
+            onEditPhoto={canEditPhotos ? openAvatarModal : undefined}
           />
         )
       ) : (

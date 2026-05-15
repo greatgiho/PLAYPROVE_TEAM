@@ -21,7 +21,8 @@ export type AppPageId =
   | "growth"
   | "admin"
   | "practice_plan"
-  | "coach_plan";
+  | "coach_plan"
+  | "video_review";
 
 const ALL_VIEWS: ViewMode[] = ["manager", "coach", "player"];
 
@@ -46,6 +47,7 @@ const PAGE_ACCESS_BY_VIEW: Record<AppPageId, ViewMode[]> = {
   simulator: ["manager", "coach"],
   rapidcheck: ["manager", "coach"],
   coach_plan: ["manager", "coach"],
+  video_review: ["manager", "coach"],
 };
 
 /** 파트 코치는 코칭 중 일부 고위험/기획 화면을 제한합니다. */

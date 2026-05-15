@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProfileAvatarPayload } from "@/components/mypage/ProfileAvatarSlots";
+import type { ProfileAvatarPayload } from "@/components/mypage/profileAvatarTypes";
 import { apiErrorUserHint, type ApiErrorBody } from "@/lib/client/apiErrorHint";
 import { useSession, useAllowableViewModes } from "@/lib/context/SessionContext";
 import { getPlayproveTeamCode } from "@/lib/config";

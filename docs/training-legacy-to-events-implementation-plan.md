@@ -35,7 +35,8 @@
 
 ## 3. 현재까지 구현된 것 (요약)
 
-- **훈련계획 작성 / 훈련 계획표** Next 페이지: `Event` + `event_coach_plans` CRUD, HC/매니저 컨펌.
+- **화면 뎁스(목표)**: `docs/frontend-navigation-depth.md` §5~§6 — 코칭 **훈련계획 작성**은 ① 일정 박스(L1) → ② 세부계획 조회(L3) → ③ 입력(L3), **훈련 시작 1시간 전**까지 수정.
+- **훈련계획 작성 / 훈련 계획표** Next 페이지: `Event` + `event_coach_plans` CRUD, HC/매니저 컨펌. *(UI는 아직 L1 인라인 폼 — §5.5 현황 참고)*
 - **훈련 계획표(집계)**: 코치 카드만 **시간(행) × 파트(열)** 격자(`CoachPlanTimetableGrid`)에 배치. `metadata.team_wide_break` 인 카드는 **전폭 휴식 행**. 참고 리듬 문구: 50분 훈련 · 10분 전체 휴식(상수, DB 강제 아님).
 - **직함 시드**: `GET /api/team/me/coach-context` → `team_members` 기반 `role_title_hint`로 작성 폼 초기화.
 - **레거시 DTO(보조)**: `training-merge-batch`·`TrainingTimetableGrid`·`trainingMergeForSeoulYmd` 는 **참고·다른 화면**용으로 코드베이스에 남음(집계 보드에서는 미사용).

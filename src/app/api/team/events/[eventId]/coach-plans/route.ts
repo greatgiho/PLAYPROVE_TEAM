@@ -1,4 +1,5 @@
 import { coachPlanRowToDto } from "@/lib/mappers/prismaEventToDto";
+import { requireCoachPlanEventEditable } from "@/lib/server/coachPlanEditWindow";
 import { canWriteCoachPlan, getTeamMember, requireDemoCookie, requireTeamFromCode } from "@/lib/server/demoTeamApiAuth";
 import { mergeCoachPlanMetadata, parseCoachPlanUnit, type CoachPlanStatus } from "@/lib/team/coachPlanMetadata";
 import { prisma } from "@/lib/prisma";
@@ -72,11 +73,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ eventId: strin
     return NextResponse.json({ error: "forbidden", message: "코치·매니저만 세부 계획을 작성할 수 있습니다." }, { status: 403 });
   }
 
-  const ev = await prisma.event.findFirst({
-    where: { id: eventId, teamId: teamGate.team.id, deletedAt: null },
-    select: { id: true },
-  });
-  if (!ev) return NextResponse.json({ error: "event_not_found" }, { status: 404 });
+  const editGate = await requireCoachPlanEventEditable(eventId, teamGate.team.id);
+  if (!editGate.ok) return editGate.response;
 
   let body: unknown;
   try {

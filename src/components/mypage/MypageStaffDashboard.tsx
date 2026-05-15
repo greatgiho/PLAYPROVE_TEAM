@@ -1,6 +1,8 @@
 "use client";
 
-import { RosterFace } from "@/components/roster/RosterFace";
+import { MypageCollapsibleSection } from "@/components/mypage/MypageCollapsibleSection";
+import { MypageHeroAvatar } from "@/components/mypage/MypageHeroAvatar";
+import type { ProfileAvatarPayload } from "@/components/mypage/profileAvatarTypes";
 import type { MypageStaffContext, MypageStaffDbProfile } from "@/lib/types/mypageStaffContext";
 import { teamRoleLabel } from "@/lib/types/roles";
 import Link from "next/link";
@@ -9,6 +11,8 @@ import { useEffect, useMemo, useState } from "react";
 type Props = {
   context: MypageStaffContext;
   onReload: () => void;
+  profilePhotos?: ProfileAvatarPayload | null;
+  onEditPhoto?: () => void;
 };
 
 function formatJoined(iso: string | null): string {
@@ -20,7 +24,15 @@ function formatJoined(iso: string | null): string {
   }
 }
 
-function StaffProfileForm({ initial, onSaved }: { initial: MypageStaffDbProfile; onSaved: () => void }) {
+function StaffProfileForm({
+  initial,
+  onSaved,
+  bare,
+}: {
+  initial: MypageStaffDbProfile;
+  onSaved: () => void;
+  bare?: boolean;
+}) {
   const [academicMajor, setAcademicMajor] = useState(initial.academicMajor ?? "");
   const [staffResponsibilities, setStaffResponsibilities] = useState(initial.staffResponsibilities ?? "");
   const [coachingCareerNotes, setCoachingCareerNotes] = useState(initial.coachingCareerNotes ?? "");
@@ -35,13 +47,14 @@ function StaffProfileForm({ initial, onSaved }: { initial: MypageStaffDbProfile;
     setCoachingUnit(initial.coachingUnit ?? "");
   }, [initial.academicMajor, initial.staffResponsibilities, initial.coachingCareerNotes, initial.coachingUnit]);
 
-  return (
-    <div className="card" style={{ marginTop: 20 }}>
-      <div className="card-body" style={{ padding: 20 }}>
-        <div className="section-title" style={{ marginBottom: 14, fontSize: 15 }}>
-          <i className="fas fa-edit" style={{ marginRight: 8 }} />
-          DB 프로필 편집
-        </div>
+  const fields = (
+    <>
+        {!bare ? (
+          <div className="section-title" style={{ marginBottom: 14, fontSize: 15 }}>
+            <i className="fas fa-edit" style={{ marginRight: 8 }} />
+            DB 프로필 편집
+          </div>
+        ) : null}
         <p style={{ fontSize: 13, color: "var(--gray-600)", marginBottom: 16, lineHeight: 1.6 }}>
           전공·담당 업무·코칭 경력은 <code>core.profiles</code> 컬럼에 저장됩니다. 항목은 줄바꿈으로 구분해 적으면 목록으로
           나뉩니다.
@@ -130,6 +143,15 @@ function StaffProfileForm({ initial, onSaved }: { initial: MypageStaffDbProfile;
             </button>
           </div>
         </div>
+    </>
+  );
+
+  if (bare) return fields;
+
+  return (
+    <div className="card" style={{ marginTop: 20 }}>
+      <div className="card-body" style={{ padding: 20 }}>
+        {fields}
       </div>
     </div>
   );
@@ -171,11 +193,13 @@ function SectionList({
   );
 }
 
-export function MypageStaffDashboard({ context, onReload }: Props) {
+export function MypageStaffDashboard({ context, onReload, profilePhotos, onEditPhoto }: Props) {
   const display = context.displayName?.trim() || "이름 미등록";
-  const mainPhoto = context.avatarUrl ?? context.personalAvatarUrl ?? null;
+  const avatarUrl = profilePhotos?.avatarUrl ?? context.avatarUrl;
+  const personalAvatarUrl = profilePhotos?.personalAvatarUrl ?? context.personalAvatarUrl;
+  const mainPhoto = avatarUrl ?? personalAvatarUrl ?? null;
   const showPersonalBadge =
-    Boolean(context.avatarUrl) && Boolean(context.personalAvatarUrl) && context.avatarUrl !== context.personalAvatarUrl;
+    Boolean(avatarUrl) && Boolean(personalAvatarUrl) && avatarUrl !== personalAvatarUrl;
 
   const roleTag = useMemo(() => {
     const base = teamRoleLabel(context.teamRole);
@@ -187,30 +211,13 @@ export function MypageStaffDashboard({ context, onReload }: Props) {
     <>
       <div className="mypage-hero">
         <div className="mypage-hero-content">
-          <div className="mypage-avatar" style={{ padding: 0, overflow: "visible", background: "transparent" }}>
-            <div style={{ position: "relative", width: 88, height: 88 }}>
-              <RosterFace name={display} photoUrl={mainPhoto} size={88} />
-              {showPersonalBadge && context.personalAvatarUrl ? (
-                <img
-                  src={context.personalAvatarUrl}
-                  alt=""
-                  width={40}
-                  height={40}
-                  style={{
-                    position: "absolute",
-                    right: -4,
-                    bottom: -4,
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "3px solid rgba(255,255,255,0.95)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                  }}
-                />
-              ) : null}
-            </div>
-          </div>
+          <MypageHeroAvatar
+            name={display}
+            mainPhotoUrl={mainPhoto}
+            personalPhotoUrl={personalAvatarUrl}
+            showPersonalBadge={showPersonalBadge}
+            onEditPhoto={onEditPhoto}
+          />
           <div style={{ flex: 1 }}>
             <div className="mypage-name">{display}</div>
             <div className="mypage-pos">{context.teamName}</div>
@@ -279,28 +286,32 @@ export function MypageStaffDashboard({ context, onReload }: Props) {
         ))}
       </div>
 
-      {context.sectionsDb.length ? (
-        <SectionList
-          title="등록된 프로필 (DB)"
-          subtitle="Supabase `core.profiles` 의 `academic_major`, `staff_responsibilities`, `coaching_*` 컬럼 값입니다."
-          blocks={context.sectionsDb}
-        />
-      ) : (
-        <div className="card" style={{ marginTop: 20 }}>
-          <div className="card-body" style={{ padding: 20, fontSize: 14, color: "var(--gray-600)", lineHeight: 1.65 }}>
-            <strong style={{ color: "var(--gray-900)" }}>DB 스태프 필드가 비어 있습니다.</strong> 아래「DB 프로필 편집」에서
+      <MypageCollapsibleSection title="등록된 프로필 (DB)" subtitle="DB에 저장된 전공·담당·코칭 정보" defaultOpen={false}>
+        {context.sectionsDb.length ? (
+          <SectionList
+            title="등록된 프로필 (DB)"
+            subtitle="Supabase `core.profiles` 의 `academic_major`, `staff_responsibilities`, `coaching_*` 컬럼 값입니다."
+            blocks={context.sectionsDb}
+          />
+        ) : (
+          <p style={{ margin: 0, fontSize: 14, color: "var(--gray-600)", lineHeight: 1.65 }}>
+            <strong style={{ color: "var(--gray-900)" }}>DB 스태프 필드가 비어 있습니다.</strong> 아래「프로필 상세 편집」에서
             입력하거나, <code>npx prisma db seed</code> 로 데모 값을 채울 수 있습니다.
-          </div>
-        </div>
-      )}
+          </p>
+        )}
+      </MypageCollapsibleSection>
 
-      <StaffProfileForm initial={context.dbProfile} onSaved={onReload} />
+      <MypageCollapsibleSection title="프로필 상세 편집 (DB)" defaultOpen={false}>
+        <StaffProfileForm initial={context.dbProfile} onSaved={onReload} bare />
+      </MypageCollapsibleSection>
 
-      <SectionList
-        title="역할별 추천 체크리스트"
-        subtitle="템플릿 가이드입니다. 실제 운영 규정에 맞게 조정하세요."
-        blocks={context.sectionsGuide}
-      />
+      <MypageCollapsibleSection title="역할별 추천 체크리스트" subtitle="운영 가이드 템플릿" defaultOpen={false}>
+        <SectionList
+          title="역할별 추천 체크리스트"
+          subtitle="템플릿 가이드입니다. 실제 운영 규정에 맞게 조정하세요."
+          blocks={context.sectionsGuide}
+        />
+      </MypageCollapsibleSection>
     </>
   );
 }

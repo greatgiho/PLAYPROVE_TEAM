@@ -41,6 +41,7 @@ model Team {
   eventCoachPlans                  EventCoachPlan[]
   practiceCheckins                 PracticeCheckin[]
   trainingSchedules                TrainingSchedule[]
+  videoArchives                    VideoArchive[]
 
   @@map("teams")
   @@schema("core")
@@ -127,6 +128,7 @@ model Player {
   teamMembers                         TeamMember[]
   iipAssignments                      IipAssignment[]
   performanceScores                   PerformanceScore[]
+  taggedVideoFeedbacks                VideoFeedback[]      @relation("video_feedback_tagged_player")
   conditionLogs                       ConditionLog[]
   injuryReports                       InjuryReport[]
   monthlyDues                         MonthlyDue[]
@@ -220,6 +222,7 @@ model Event {
   users_events_updated_byTousers users?             @relation("events_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
   practiceCheckins               PracticeCheckin[]
   eventCoachPlans                EventCoachPlan[]
+  videoArchives                  VideoArchive[]
 
   @@map("events")
   @@schema("training")
@@ -365,6 +368,48 @@ model PracticeCheckin {
   @@schema("training")
 }
 
+/// 팀 영상 아카이브(유튜브·내부 링크). 작성 권한은 앱에서 `core.team_members.role`(`team_member_role`)으로 구분 —
+/// 일반적으로 manager·head_coach·part_coach만 등록/삭제, 피드백 작성은 코치 롤 위주로 제한할 수 있습니다.
+model VideoArchive {
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  teamId      String                  @map("team_id") @db.Uuid
+  eventId     String?                 @map("event_id") @db.Uuid
+  title       String                  @map("title")
+  sourceType  video_archive_source_type @map("source_type")
+  sourceUrl   String                  @map("source_url") @db.Text
+  team        Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  event       Event?                  @relation(fields: [eventId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  feedbacks   VideoFeedback[]
+  performanceScores PerformanceScore[]
+
+  @@index([teamId])
+  @@index([eventId])
+  @@map("video_archives")
+  @@schema("training")
+}
+
+/// 영상 시점별 코멘트. 작성자는 `auth.users`; UI 표시는 `authorUserId`로 `core.profiles`와 조인하면 됩니다.
+model VideoFeedback {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  videoArchiveId   String        @map("video_archive_id") @db.Uuid
+  timestampSeconds Int           @map("timestamp_seconds")
+  content          String        @map("content") @db.Text
+  authorUserId     String        @map("author_user_id") @db.Uuid
+  taggedPlayerId   String?       @map("tagged_player_id") @db.Uuid
+  videoArchive     VideoArchive  @relation(fields: [videoArchiveId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  author           users         @relation("video_feedbacks_author_user_idTousers", fields: [authorUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  taggedPlayer     Player?       @relation("video_feedback_tagged_player", fields: [taggedPlayerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([videoArchiveId])
+  @@index([authorUserId])
+  @@map("video_feedbacks")
+  @@schema("training")
+}
+
 model DrillLibrary {
   id                                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt                             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -409,14 +454,17 @@ model PerformanceScore {
   coachComment                                  String?         @map("coach_comment")
   keywordTags                                   String[]        @default([]) @map("keyword_tags")
   isVisibleToPlayer                             Boolean         @default(true) @map("is_visible_to_player")
+  videoArchiveId                                String?         @map("video_archive_id") @db.Uuid
   iipFromSource                                 IipAssignment[] @relation("PerfToIip")
   users_performance_scores_coach_user_idTousers users           @relation("performance_scores_coach_user_idTousers", fields: [coachUserId], references: [id], onUpdate: NoAction)
   users_performance_scores_created_byTousers    users?          @relation("performance_scores_created_byTousers", fields: [createdBy], references: [id], onUpdate: NoAction)
   player                                        Player          @relation(fields: [playerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   sourceEvent                                   Event?          @relation(fields: [sourceEventId], references: [id], onUpdate: NoAction)
   team                                          Team            @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  videoArchive                                  VideoArchive?   @relation(fields: [videoArchiveId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   users_performance_scores_updated_byTousers    users?          @relation("performance_scores_updated_byTousers", fields: [updatedBy], references: [id], onUpdate: NoAction)
 
+  @@index([videoArchiveId])
   @@map("performance_scores")
   @@schema("development")
 }
@@ -1024,6 +1072,7 @@ model users {
   training_schedules_training_schedules_created_byTousers      TrainingSchedule[]     @relation("training_schedules_created_byTousers")
   training_schedules_training_schedules_rejected_byTousers     TrainingSchedule[]     @relation("training_schedules_rejected_byTousers")
   training_schedules_training_schedules_updated_byTousers      TrainingSchedule[]     @relation("training_schedules_updated_byTousers")
+  video_feedbacks_video_feedbacks_author_user_idTousers        VideoFeedback[]        @relation("video_feedbacks_author_user_idTousers")
 
   @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
   @@index([email], map: "idx_users_email")
@@ -1287,6 +1336,13 @@ enum training_schedule_status {
   rejected
   published
   archived
+
+  @@schema("training")
+}
+
+enum video_archive_source_type {
+  YOUTUBE
+  INTERNAL
 
   @@schema("training")
 }

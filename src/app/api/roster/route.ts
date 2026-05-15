@@ -6,6 +6,7 @@ import {
 } from "@/lib/mappers/prismaTeamMemberToRosterRow";
 import { playerEntityToRosterRow } from "@/lib/mappers/playerEntityToRosterRow";
 import { getPlayproveTeamCode } from "@/lib/config";
+import { nextResponseForPrismaOrDbError } from "@/lib/server/prismaRouteError";
 import { team_member_role } from "@prisma/client";
 import { NextResponse } from "next/server";
 
@@ -25,53 +26,62 @@ export async function GET(req: Request) {
     );
   }
 
-  const team = await prisma.team.findFirst({
-    where: { teamCode, deletedAt: null },
-    select: { id: true, name: true, teamCode: true },
-  });
+  try {
+    const team = await prisma.team.findFirst({
+      where: { teamCode, deletedAt: null },
+      select: { id: true, name: true, teamCode: true },
+    });
 
-  if (!team) {
-    return NextResponse.json({ error: "team_not_found", teamCode }, { status: 404 });
+    if (!team) {
+      return NextResponse.json({ error: "team_not_found", teamCode }, { status: 404 });
+    }
+
+    const [playerRows, memberRows] = await Promise.all([
+      prisma.player.findMany({
+        where: { teamId: team.id, deletedAt: null },
+        include: {
+          users_players_linked_user_idTousers: {
+            include: { profiles_profiles_idTousers: true },
+          },
+        },
+      }),
+      prisma.teamMember.findMany({
+        where: {
+          teamId: team.id,
+          deletedAt: null,
+          role: { in: [team_member_role.manager, team_member_role.head_coach, team_member_role.part_coach] },
+        },
+        include: {
+          users_team_members_user_idTousers: {
+            include: { profiles_profiles_idTousers: true },
+          },
+        },
+      }),
+    ]);
+
+    const players = playerRows
+      .map(prismaPlayerToEntity)
+      .sort((a, b) => {
+        const ja = a.jersey_number ?? 999;
+        const jb = b.jersey_number ?? 999;
+        if (ja !== jb) return ja - jb;
+        return a.full_name.localeCompare(b.full_name, "ko");
+      })
+      .map(playerEntityToRosterRow);
+
+    const staff = sortTeamMembersForRoster(memberRows).map(prismaTeamMemberToRosterRow);
+
+    return NextResponse.json({
+      team: { id: team.id, name: team.name, teamCode: team.teamCode },
+      players,
+      staff,
+    });
+  } catch (e) {
+    const mapped = nextResponseForPrismaOrDbError(e);
+    if (mapped) return mapped;
+    console.error("[GET /api/roster]", e);
+    const detail =
+      process.env.NODE_ENV === "development" && e instanceof Error ? e.message : "서버 오류";
+    return NextResponse.json({ error: "internal_error", message: detail }, { status: 500 });
   }
-
-  const [playerRows, memberRows] = await Promise.all([
-    prisma.player.findMany({
-      where: { teamId: team.id, deletedAt: null },
-      include: {
-        users_players_linked_user_idTousers: {
-          include: { profiles_profiles_idTousers: true },
-        },
-      },
-    }),
-    prisma.teamMember.findMany({
-      where: {
-        teamId: team.id,
-        deletedAt: null,
-        role: { in: [team_member_role.manager, team_member_role.head_coach, team_member_role.part_coach] },
-      },
-      include: {
-        users_team_members_user_idTousers: {
-          include: { profiles_profiles_idTousers: true },
-        },
-      },
-    }),
-  ]);
-
-  const players = playerRows
-    .map(prismaPlayerToEntity)
-    .sort((a, b) => {
-      const ja = a.jersey_number ?? 999;
-      const jb = b.jersey_number ?? 999;
-      if (ja !== jb) return ja - jb;
-      return a.full_name.localeCompare(b.full_name, "ko");
-    })
-    .map(playerEntityToRosterRow);
-
-  const staff = sortTeamMembersForRoster(memberRows).map(prismaTeamMemberToRosterRow);
-
-  return NextResponse.json({
-    team: { id: team.id, name: team.name, teamCode: team.teamCode },
-    players,
-    staff,
-  });
 }

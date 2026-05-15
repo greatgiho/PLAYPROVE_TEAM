@@ -116,4 +116,10 @@
 
 ---
 
+## 8. API 보충(스냅샷)
+
+- **영상 아카이브·피드백**: `GET|POST /api/team/video-archives?teamCode=` · `GET /api/team/video-archives/[archiveId]?teamCode=` · `POST /api/team/video-archives/[archiveId]/feedback?teamCode=` — 데모 쿠키 `pp_demo_uid`, 팀 스코프, 코치·매니저 작성 가드(`canWriteCoachPlan`).
+
+---
+
 *본 보고서는 저장소 스냅샷 기준이며, 배포 환경·실제 Supabase 정책·RLS는 별도 점검이 필요할 수 있습니다.*

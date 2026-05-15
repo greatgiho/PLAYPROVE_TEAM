@@ -493,6 +493,185 @@ select.filter-select:focus { border-color: var(--primary); }
   gap: 10px;
 }
 
+@media (max-width: 640px) {
+  .modal-backdrop.modal-backdrop--sheet {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-backdrop.modal-backdrop--sheet .modal-box {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    animation: modalSheetIn 0.22s ease;
+  }
+}
+@keyframes modalSheetIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+.mypage-hero-photo-btn {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 0;
+}
+.mypage-hero-photo-btn:hover {
+  filter: brightness(1.05);
+}
+
+.mypage-collapse-trigger {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.mypage-collapse-chevron {
+  width: 20px;
+  color: var(--gray-500);
+  flex-shrink: 0;
+}
+.mypage-collapse-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mypage-collapse-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+.mypage-collapse-subtitle {
+  font-size: 12px;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mypage-collapse-panel {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--gray-100);
+}
+.mypage-collapse .card {
+  margin-top: 0;
+  box-shadow: none;
+  border: 1px solid var(--gray-100);
+}
+
+/* Coach plan schedule (L1) */
+.coach-plan-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 12px;
+}
+.coach-plan-schedule-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  min-height: 132px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.coach-plan-schedule-box:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+.coach-plan-schedule-box-date {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.coach-plan-schedule-box-time {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+.coach-plan-schedule-box-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1.35;
+  flex: 1;
+}
+.coach-plan-schedule-box-loc {
+  font-size: 11px;
+  color: var(--gray-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coach-plan-schedule-box-status {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  align-self: flex-start;
+}
+.coach-plan-box-status--empty { background: var(--gray-100); color: var(--gray-600); }
+.coach-plan-box-status--draft { background: #f3f4f6; color: #4b5563; }
+.coach-plan-box-status--submitted { background: #fef3c7; color: #92400e; }
+.coach-plan-box-status--confirmed { background: #dcfce7; color: #166534; }
+.coach-plan-box-status--mixed { background: #ede9fe; color: #5b21b6; }
+.coach-plan-schedule-box-meta {
+  font-size: 10px;
+  color: var(--gray-400);
+}
+.coach-plan-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border: 2px dashed var(--gray-200);
+  border-radius: var(--radius);
+  background: var(--gray-50, #f9fafb);
+}
+.coach-plan-detail-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 120px;
+  min-height: 120px;
+  padding: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(26, 92, 168, 0.35);
+}
+.coach-plan-detail-add-btn i {
+  font-size: 28px;
+}
+
 /* Toast */
 .toast {
   position: fixed;

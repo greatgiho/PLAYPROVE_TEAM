@@ -61,6 +61,12 @@ export function canConfirmCoachPlans(role: team_member_role | null): boolean {
   return role === team_member_role.manager || role === team_member_role.head_coach;
 }
 
+/** 영상 피드백 삭제·스탯 최종 승인: 감독(헤드코치) 또는 매니저 */
+export function canFinalizeVideoReview(role: team_member_role | null): boolean {
+  if (!role) return false;
+  return role === team_member_role.manager || role === team_member_role.head_coach;
+}
+
 /** 출결 변경: 매니저·코치 전원, 또는 선수 본인만 */
 export function canEditAttendance(
   role: team_member_role | null,

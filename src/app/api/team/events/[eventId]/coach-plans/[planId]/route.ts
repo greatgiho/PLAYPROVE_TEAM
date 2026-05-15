@@ -1,4 +1,5 @@
 import { coachPlanRowToDto } from "@/lib/mappers/prismaEventToDto";
+import { requireCoachPlanEventEditable } from "@/lib/server/coachPlanEditWindow";
 import {
   canConfirmCoachPlans,
   canWriteCoachPlan,
@@ -103,6 +104,33 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ eventId: stri
     metaPatch.team_wide_break = b.team_wide_break === true;
   }
 
+  const headConfirmOnly =
+    (b.plan_status === "confirmed" || b.plan_status === "rejected") &&
+    title === undefined &&
+    content === undefined &&
+    b.unit === undefined &&
+    b.role_title === undefined &&
+    b.slot_start === undefined &&
+    b.slot_end === undefined &&
+    b.team_wide_break === undefined;
+
+  const touchesEditableFields =
+    !headConfirmOnly &&
+    (title !== undefined ||
+      content !== undefined ||
+      b.unit !== undefined ||
+      b.role_title !== undefined ||
+      b.slot_start !== undefined ||
+      b.slot_end !== undefined ||
+      b.team_wide_break !== undefined ||
+      b.plan_status === "draft" ||
+      b.plan_status === "submitted");
+
+  if (touchesEditableFields) {
+    const editGate = await requireCoachPlanEventEditable(eventId, teamGate.team.id);
+    if (!editGate.ok) return editGate.response;
+  }
+
   if (b.plan_status !== undefined) {
     const ns = b.plan_status as string;
     if (ns === "draft" || ns === "submitted") {
@@ -184,6 +212,9 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ eventId: str
     await prisma.eventCoachPlan.update({ where: { id: planId }, data: { deletedAt: new Date() } });
     return NextResponse.json({ ok: true });
   }
+
+  const editGate = await requireCoachPlanEventEditable(eventId, teamGate.team.id);
+  if (!editGate.ok) return editGate.response;
 
   const member = await getTeamMember(teamGate.team.id, auth.userId);
   if (!member || !canWriteCoachPlan(member.role) || plan.coachUserId !== auth.userId) {

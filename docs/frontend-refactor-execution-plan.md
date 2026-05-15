@@ -8,6 +8,7 @@
 - Tailwind 3 + PostCSS (`tailwind.config.ts`, `preflight: false`) — 레거시 전역 CSS와 충돌을 줄이면서 유틸 도입 가능
 - `@/lib/config` (`getPlayproveTeamCode`, `hasPlayproveTeamCode`), `src/styles/app-tokens.css`, `theme.extend`의 `app.*` 색/반경/그림자
 - `src/components/ui` (`Card`, `Stack`) 및 `/dev/playprove` 파일럿
+- **화면 뎁스·오버레이·도메인 IA**: `docs/frontend-navigation-depth.md` (L0~L3, 마이페이지 I1~I5, **훈련계획 작성 T0~T5** §5)
 
 ---
 
@@ -88,6 +89,8 @@ src/lib/
 | P2-3 | `app/app/roster/page.tsx` | `RosterTable` 등 파일 분리, DB/로컬 분기 정리. |
 
 **진행 현황**: P2-1 출결 → `src/components/features/attendance/`; P2-2 마이페이지 → `features/mypage/` (`useMypagePageState`, `MypagePageView`); P2-3 로스터 → `features/roster/` (`RosterTable`, `useRosterPageState`, `RosterPageView`). 각 라우트 `page.tsx`는 `AccessGuard` + 해당 `*PageView` 조립만.
+
+**다음 (마이페이지 모바일)**: `docs/frontend-navigation-depth.md` §7 — I1 `ProfileAvatarModal` → I2 히어로 수정 버튼 → I3 인라인 사진 카드 제거 → I4 접기/그리드.
 
 **완료 조건**: 각 대상 `page.tsx` **라인 수 목표** (예: 400줄 미만 또는 팀 합의치); 빌드·스모크 통과.
 
